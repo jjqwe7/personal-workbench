@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>个人工作台 - 手机安装使用指南</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #F8F8F5;
+    color: #4A4642;
+    line-height: 1.8;
+    padding: 20px;
+    max-width: 680px;
+    margin: 0 auto;
+  }
+  .header {
+    text-align: center;
+    padding: 32px 16px 24px;
+    background: #fff;
+    border-radius: 14px;
+    margin-bottom: 20px;
+    border: 1px solid #EBE7E2;
+  }
+  .header h1 {
+    font-size: 1.5rem;
+    color: #7A8B73;
+    margin-bottom: 8px;
+  }
+  .header p {
+    font-size: 0.9rem;
+    color: #918B83;
+  }
+  .step-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 24px 20px;
+    margin-bottom: 16px;
+    border: 1px solid #EBE7E2;
+    box-shadow: 0 1px 4px rgba(74,70,66,0.05);
+  }
+  .step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #9DAE94;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+  .step-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #4A4642;
+  }
+  .step-content {
+    font-size: 0.9rem;
+    color: #5A5650;
+    line-height: 1.8;
+  }
+  .step-content ol, .step-content ul {
+    padding-left: 20px;
+    margin: 8px 0;
+  }
+  .step-content li {
+    margin-bottom: 6px;
+  }
+  .tip-box {
+    background: rgba(157,174,148,0.1);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin: 12px 0;
+    font-size: 0.85rem;
+    color: #5A5650;
+    border-left: 3px solid #9DAE94;
+  }
+  .tip-box strong {
+    color: #7A8B73;
+  }
+  .warn-box {
+    background: rgba(212,181,130,0.12);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin: 12px 0;
+    font-size: 0.85rem;
+    color: #5A5650;
+    border-left: 3px solid #D4B582;
+  }
+  .warn-box strong {
+    color: #AEA288;
+  }
+  .danger-box {
+    background: rgba(201,155,155,0.08);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin: 12px 0;
+    font-size: 0.85rem;
+    color: #5A5650;
+    border-left: 3px solid #C99B9B;
+  }
+  .danger-box strong {
+    color: #B89090;
+  }
+  .url-box {
+    display: inline-block;
+    background: #4A4642;
+    color: #F8F8F5;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    letter-spacing: 0.5px;
+    margin: 4px 0;
+    user-select: all;
+    -webkit-user-select: all;
+  }
+  .img-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 80px;
+    background: #F0EDE8;
+    border-radius: 8px;
+    color: #918B83;
+    font-size: 0.8rem;
+    margin: 12px 0;
+    border: 2px dashed #D9D0BB;
+  }
+  .footer {
+    text-align: center;
+    padding: 20px;
+    color: #918B83;
+    font-size: 0.8rem;
+  }
+  .faq-item {
+    margin-bottom: 12px;
+  }
+  .faq-q {
+    font-weight: 600;
+    color: #4A4642;
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+  }
+  .faq-a {
+    font-size: 0.85rem;
+    color: #5A5650;
+    padding-left: 16px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>个人工作台 - 手机安装使用指南</h1>
+  <p>vivo S30 Pro mini · OriginOS 5 (Android 15) · 6.31英寸 1.5K屏</p>
+</div>
+
+<!-- 前提条件 -->
+<div class="step-card">
+  <span class="step-num">!</span>
+  <div class="step-title">前提条件（请先确认）</div>
+  <div class="step-content">
+    <ol>
+      <li><strong>电脑和手机连同一个 WiFi</strong> — 这是最关键的一步！手机和电脑必须连接同一个局域网（比如同一个路由器的 WiFi）</li>
+      <li><strong>电脑保持开机</strong> — 手机关闭后数据保留在手机本地，但首次安装和以后使用时电脑需要开机并运行服务器</li>
+      <li><strong>电脑上服务器已启动</strong> — 我已经帮你启动了，不要关闭那个黑色命令行窗口</li>
+    </ol>
+    <div class="warn-box">
+      <strong>注意：</strong>如果你的电脑连的是校园网/公司网，手机连的是自己的流量或另一个 WiFi，它们就不在同一个局域网，手机将无法访问。
+    </div>
+  </div>
+</div>
+
+<!-- 步骤1：检查防火墙 -->
+<div class="step-card">
+  <span class="step-num">1</span>
+  <div class="step-title">检查并放行防火墙（仅需做一次）</div>
+  <div class="step-content">
+    <p>Windows 防火墙可能会阻止手机访问电脑。需要放行 8090 端口：</p>
+    <ol>
+      <li>在电脑左下角搜索栏输入 <strong>「Windows Defender 防火墙」</strong>，点击打开</li>
+      <li>点击左侧 <strong>「高级设置」</strong></li>
+      <li>点击左侧 <strong>「入站规则」</strong></li>
+      <li>点击右侧 <strong>「新建规则」</strong></li>
+      <li>选择 <strong>「端口」</strong>，点击下一步</li>
+      <li>选择 <strong>「TCP」</strong>，特定本地端口输入 <strong>8090</strong>，点击下一步</li>
+      <li>选择 <strong>「允许连接」</strong>，点击下一步</li>
+      <li>勾选 <strong>「专用」</strong>（取消勾选「域」和「公用」），点击下一步</li>
+      <li>名称输入 <strong>Workbench</strong>，点击完成</li>
+    </ol>
+    <div class="tip-box">
+      <strong>快捷方法：</strong>也可以直接以管理员身份打开 PowerShell，粘贴以下命令一键完成：<br>
+      <code>New-NetFirewallRule -DisplayName 'Workbench_8090' -Direction Inbound -LocalPort 8090 -Protocol TCP -Action Allow -Profile Private</code>
+    </div>
+  </div>
+</div>
+
+<!-- 步骤2：手机打开网址 -->
+<div class="step-card">
+  <span class="step-num">2</span>
+  <div class="step-title">在 vivo 手机浏览器中打开网址</div>
+  <div class="step-content">
+    <p>你的 <strong>vivo S30 Pro mini</strong> 搭载 <strong>OriginOS 5（基于 Android 15）</strong>，系统自带 vivo 浏览器完整支持 PWA 安装。在手机上打开 <strong>vivo 浏览器</strong>（或 Chrome），在地址栏输入：</p>
+    <div style="text-align:center; margin: 16px 0;">
+      <span class="url-box">http://10.120.92.210:8090</span>
+    </div>
+    <p>输入后按「前往」或回车键。</p>
+    <div class="tip-box">
+      <strong>如何确认 IP 地址：</strong>上面的 <code>10.120.92.210</code> 是你当前电脑的局域网 IP。如果换了 WiFi 网络，IP 可能会变。届时可以在电脑上打开 PowerShell 输入 <code>ipconfig</code>，找到「IPv4 地址」那一行即可。
+    </div>
+    <div class="warn-box">
+      <strong>如果打不开怎么办：</strong>
+      <ul>
+        <li>确认手机和电脑连的是<strong>同一个 WiFi</strong></li>
+        <li>确认电脑上那个黑色命令行窗口<strong>还在运行</strong>（没被关掉）</li>
+        <li>确认防火墙已放行（步骤1）</li>
+        <li>如果是校园网，可能需要先登录校园网认证页面</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- 步骤3：填写初始信息 -->
+<div class="step-card">
+  <span class="step-num">3</span>
+  <div class="step-title">首次打开 - 填写个人信息</div>
+  <div class="step-content">
+    <p>第一次打开会进入引导页面，需要填写：</p>
+    <ul>
+      <li><strong>昵称</strong> — 你的名字</li>
+      <li><strong>生日</strong> — 选填</li>
+      <li><strong>性别</strong> — 选择男/女</li>
+      <li><strong>身高体重</strong> — 选填，用于计算热量</li>
+      <li><strong>体质类型</strong> — 点击选择你的中医体质（不确定就选「平和质」）</li>
+      <li><strong>每日预算</strong> — 默认100元，可修改</li>
+      <li><strong>其他目标</strong> — 热量、饮水、运动、学习目标，可后续在设置中改</li>
+    </ul>
+    <p>填完后点击底部 <strong>「开始使用」</strong> 按钮。</p>
+    <div class="tip-box">
+      <strong>提示：</strong>所有信息都可以在「设置」页面随时修改，不用担心填错。
+    </div>
+  </div>
+</div>
+
+<!-- 步骤4：安装到桌面（PWA） -->
+<div class="step-card">
+  <span class="step-num">4</span>
+  <div class="step-title">添加到桌面（安装为 PWA 应用）</div>
+  <div class="step-content">
+    <p><strong>方法一：vivo 浏览器（你的 S30 Pro mini 首选）</strong></p>
+    <ol>
+      <li>用 vivo 浏览器打开网址后，点击底部 <strong>「三」</strong>（菜单按钮，在底部工具栏右侧）</li>
+      <li>在弹出的菜单中找到 <strong>「添加到主屏幕」</strong>（或先选「收藏/书签」再长按书签选择「添加到主屏幕」）</li>
+      <li>确认添加，可以修改名称为「工作台」</li>
+      <li>回到手机桌面，会看到一个「工作台」图标，带莫兰迪绿色叶子图标</li>
+      <li>点击该图标即可像 APP 一样全屏使用，没有浏览器地址栏，体验和原生 APP 一样</li>
+    </ol>
+    <div class="tip-box">
+      <strong>OriginOS 5 优势：</strong>你的系统基于 Android 15，PWA 安装后会生成真正的独立应用窗口，支持后台保活、消息通知，体验接近原生 APP。12GB+12GB 运行内存完全不会有性能问题。
+    </div>
+
+    <p style="margin-top: 16px;"><strong>方法二：Chrome 浏览器（备选，PWA 体验最佳）</strong></p>
+    <ol>
+      <li>从应用商店安装 Chrome 浏览器</li>
+      <li>用 Chrome 打开网址后，点击右上角 <strong>「⋮」</strong>（三个点菜单）</li>
+      <li>选择 <strong>「添加到主屏幕」</strong> 或 <strong>「安装应用」</strong></li>
+      <li>Chrome 的 PWA 支持最完善，安装后会出现在「设置 → 应用管理」中，和真正的 APP 一样</li>
+    </ol>
+
+    <p style="margin-top: 16px;"><strong>方法三：QQ 浏览器</strong></p>
+    <ol>
+      <li>用 QQ 浏览器打开网址，点击底部 <strong>「菜单」</strong></li>
+      <li>选择 <strong>「添加书签」</strong> → <strong>「添加到主屏幕」</strong></li>
+    </ol>
+
+    <div class="danger-box">
+      <strong>重要：</strong>安装到桌面后，每次使用前仍需确保电脑开机且服务器在运行。如果电脑关机了，APP 打开会显示空白或加载失败，这是正常的 — 重新打开电脑和服务器即可恢复。
+    </div>
+  </div>
+</div>
+
+<!-- 步骤5：日常使用 -->
+<div class="step-card">
+  <span class="step-num">5</span>
+  <div class="step-title">日常使用说明</div>
+  <div class="step-content">
+    <p>安装完成后，日常使用流程：</p>
+    <ul>
+      <li><strong>每天使用</strong>：直接点桌面图标打开，数据会自动保存在手机本地</li>
+      <li><strong>底部导航</strong>：首页 / 学习 / 护肤 / 饮食 / 财务 / 战略，点击切换</li>
+      <li><strong>快捷入口</strong>：首页有购买顾问、花呗管理、文献、食谱等快捷入口</li>
+      <li><strong>记录数据</strong>：各模块点「+」按钮添加记录，自动保存</li>
+      <li><strong>智能联动</strong>：系统会根据你的财务、运动、护肤状态自动给出饮食建议</li>
+    </ul>
+    <div class="tip-box">
+      <strong>离线使用：</strong>PWA 安装后，部分页面在手机离线时也能打开（已缓存的页面）。但新增记录需要联网才能同步保存。
+    </div>
+  </div>
+</div>
+
+<!-- 常见问题 -->
+<div class="step-card">
+  <span class="step-num">?</span>
+  <div class="step-title">常见问题解答</div>
+  <div class="step-content">
+    <div class="faq-item">
+      <div class="faq-q">Q: 手机打开后白屏怎么办？</div>
+      <div class="faq-a">A: 检查电脑是否开机、命令行窗口是否还在运行。如果服务器正常，尝试清除浏览器缓存后重新打开。</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">Q: 换了 WiFi 后打不开了？</div>
+      <div class="faq-a">A: 电脑的 IP 地址可能变了。在电脑上打开 PowerShell 输入 <code>ipconfig</code>，找到新的 IPv4 地址，用新地址重新访问。</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">Q: 数据会丢失吗？</div>
+      <div class="faq-a">A: 数据保存在手机浏览器的本地存储中。只要不清除浏览器数据，数据就不会丢失。建议偶尔在设置中导出数据备份。</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">Q: 不想每次都开电脑怎么办？</div>
+      <div class="faq-a">A: 如果需要永久在线访问，可以将文件部署到免费云服务（如 GitHub Pages、Vercel 等），我可以帮你操作。</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">Q: 桌面图标怎么删除？</div>
+      <div class="faq-a">A: 长按桌面图标，选择「卸载」或「移除」，和删除普通 APP 一样。</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">Q: vivo 浏览器找不到「添加到主屏幕」选项？</div>
+      <div class="faq-a">A: 部分 vivo 浏览器版本菜单中叫「添加书签」→ 然后在书签管理中长按书签 → 「添加到主屏幕」。也可以安装 Chrome 浏览器使用，Chrome 的 PWA 支持更好。</div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  个人工作台 PWA · 制作于 2026 年 7 月
+</div>
+
+</body>
+</html>
