@@ -660,13 +660,13 @@ const ContentData = {
         title: '第1周 \u00b7 科研全景认知',
         date: '7/27-8/2',
         days: [
-          { day: 1, date: '7/27 周一', topic: '科研的本质与闭环', content: '科研的本质：系统性探索未知、创造新知识。完整科研闭环：发现问题\u2192查文献\u2192提出假设\u2192设计实验\u2192收集数据\u2192分析结果\u2192写论文\u2192同行评审\u2192发表。基础研究 vs 应用研究的区别。', task: '画出科研闭环流程图，贴在书桌前。' },
-          { day: 2, date: '7/28 周二', topic: '论文类型', content: '原创研究(Original Article)有原创数据，IMRaD结构；综述(Review)无新实验，梳理领域进展，8000-15000字；快报(Letter)快速公布突破性发现，2000-3000字；方法学(Method)介绍新方法/新工具；病例报告(Case Report)临床医学特有。', task: '列对比表，比较综述和原创研究在结构/篇幅/有无实验数据上的区别。' },
-          { day: 3, date: '7/29 周三', topic: '期刊索引体系', content: 'SCI与SCIE的关系（现在说SCI通常指SCIE）；SCIE：自然科学，9500+种期刊；SSCI：社会科学，3500+种；ESCI：新兴预备版；2024年起SCIE/SSCI/ESCI统一排名的重大变化；CSCD：中国科学引文数据库。', task: '记住SCIE/SSCI/ESCI/CSCD四个缩写的全称和中文含义。' },
-          { day: 4, date: '7/30 周四', topic: '影响因子', content: 'IF计算公式：前两年文章在当年被引总次数 \u00f7 前两年文章总数。IF档次：>30顶刊 / 10-30高水平 / 5-10不错 / 2-5普通 / <2入门。IF的局限：不能跨学科直接比较。', task: '手算：某刊2023发50篇、2024发60篇，2025年被引共330次，求2025年IF。（答案：3.0）' },
-          { day: 5, date: '7/31 周五', topic: 'JCR分区与中科院分区', content: 'JCR分区：按学科Q1-Q4各占25%。中科院分区：金字塔式，1区仅前5%，有大小类，有Top期刊概念。国内毕业/评职称通常看中科院分区。', task: '在LetPub搜索Journal of Ethnopharmacology，记录其中科院分区、JCR分区、IF、审稿周期。' },
-          { day: 6, date: '8/1 周六', topic: '深度练习', content: '调研中药学/植物学领域的期刊生态。', task: '用LetPub查5个期刊的中科院分区、IF、审稿周期、录用率：Journal of Ethnopharmacology / Phytomedicine / Chinese Medicine / Journal of Natural Products / Phytochemistry。做一张5期刊对比表。' },
-          { day: 7, date: '8/2 周日', topic: '周复盘', content: '回顾本周5个核心概念，用自己的话各写1-2句解释。标记还没完全懂的点，记到\u201c疑问清单\u201d。整理本周笔记到一个文档。', task: '完成周复盘' }
+          { day: 1, date: '7/27 周一', topic: '科研的本质与闭环', content: '科研的本质：系统性探索未知、创造新知识。完整科研闭环：发现问题\u2192查文献\u2192提出假设\u2192设计实验\u2192收集数据\u2192分析结果\u2192写论文\u2192同行评审\u2192发表。基础研究 vs 应用研究的区别。', task: '画出科研闭环流程图，贴在书桌前。', goal: '建立"科研是什么"的整体认知', materials: 'B站搜索"科研入门 第一课"系列视频（约30分钟）；国家高等教育智慧教育平台"现代中药研究技术与方法"课程绪论', selfTest: '用一句话说出科研的本质？说出科研闭环至少5个环节。' },
+          { day: 2, date: '7/28 周二', topic: '论文类型', content: '原创研究(Original Article)有原创数据，IMRaD结构；综述(Review)无新实验，梳理领域进展，8000-15000字；快报(Letter)快速公布突破性发现，2000-3000字；方法学(Method)介绍新方法/新工具；病例报告(Case Report)临床医学特有。', task: '列对比表，比较综述和原创研究在结构/篇幅/有无实验数据上的区别。', goal: '分清论文的几种类型，知道你要写的是哪种', materials: 'CNKI搜索"赶黄草 综述"和"赶黄草 研究"各下载1篇对比', selfTest: '综述和原创研究最大的区别？你的论文属于哪种？IMRaD四个字母代表什么？' },
+          { day: 3, date: '7/29 周三', topic: '期刊索引体系', content: 'SCI与SCIE的关系（现在说SCI通常指SCIE）；SCIE：自然科学，9500+种期刊；SSCI：社会科学，3500+种；ESCI：新兴预备版；2024年起SCIE/SSCI/ESCI统一排名的重大变化；CSCD：中国科学引文数据库。', task: '记住SCIE/SSCI/ESCI/CSCD四个缩写的全称和中文含义。', goal: '搞懂SCI/SCIE/SSCI/ESCI/CSCD都是什么', materials: '学子尚留学"四大引文索引详解"；AC学术平台"SCI/SCIE/SSCI/ESCI区别"；科学网"闲话Web of Science平台"', selfTest: 'SCI和SCIE是什么关系？2024年起统一排名意味着什么？' },
+          { day: 4, date: '7/30 周四', topic: '影响因子', content: 'IF计算公式：前两年文章在当年被引总次数 \u00f7 前两年文章总数。IF档次：>30顶刊 / 10-30高水平 / 5-10不错 / 2-5普通 / <2入门。IF的局限：不能跨学科直接比较。', task: '手算：某刊2023发50篇、2024发60篇，2025年被引共330次，求2025年IF。（答案：3.0）', goal: '彻底搞懂影响因子(IF/JIF)的定义与计算原理', materials: 'JCR官网(jcr.clarivate.com)查一个期刊看其IF；科学网IF点评文章', selfTest: '写出IF计算公式。手算IF。IF=3.0算什么档次？' },
+          { day: 5, date: '7/31 周五', topic: 'JCR分区与中科院分区', content: 'JCR分区：按学科Q1-Q4各占25%。中科院分区：金字塔式，1区仅前5%，有大小类，有Top期刊概念。国内毕业/评职称通常看中科院分区。', task: '在LetPub搜索Journal of Ethnopharmacology，记录其中科院分区、JCR分区、IF、审稿周期。', goal: '理解JCR分区 vs 中科院分区，知道"顶刊"和"Top期刊"', materials: '搜狐"一文搞懂论文期刊分区"；中科院文献情报中心分区表官网(fenqubiao.com)', selfTest: 'JCR分区和中科院分区的核心区别？什么是Top期刊？' },
+          { day: 6, date: '8/1 周六', topic: '深度练习', content: '调研中药学/植物学领域的期刊生态。', task: '用LetPub查5个期刊的中科院分区、IF、审稿周期、录用率：Journal of Ethnopharmacology / Phytomedicine / Chinese Medicine / Journal of Natural Products / Phytochemistry。做一张5期刊对比表。', goal: '调研中药学/植物学领域的期刊生态', materials: 'LetPub查询5个期刊信息', selfTest: '5个期刊中哪个最适合你的方向？为什么？' },
+          { day: 7, date: '8/2 周日', topic: '周复盘', content: '回顾本周5个核心概念，用自己的话各写1-2句解释。标记还没完全懂的点，记到\u201c疑问清单\u201d。整理本周笔记到一个文档。', task: '完成周复盘', goal: '回顾本周5个核心概念，查漏补缺', materials: '本周笔记', selfTest: '本周5个核心概念能复述几个？哪些没搞懂？' }
         ]
       },
       {
@@ -674,13 +674,13 @@ const ContentData = {
         title: '第2周 \u00b7 文献检索实操',
         date: '8/3-8/9',
         days: [
-          { day: 8, date: '8/3 周一', topic: '数据库全景', content: '中文(CNKI/万方/维普)；英文(PubMed/WoS/Google Scholar)；全文获取途径。', task: '确认学校图书馆能访问哪些数据库。' },
-          { day: 9, date: '8/4 周二', topic: 'CNKI高级检索', content: '高级检索多字段组合；检索式语法AND/OR/NOT；句子检索、知网节。', task: '在CNKI检索\u201c赶黄草 AND (黄酮 OR 转录组)\u201d，用Zotero保存前5篇。' },
-          { day: 10, date: '8/5 周三', topic: 'PubMed与MeSH', content: 'PubMed高级检索；MeSH主题词；字段限定[Title/Abstract]。', task: '执行检索式\u201cPenthorum chinense\u201d[Title/Abstract] OR (\u201cSCPL\u201d[Title/Abstract] AND \u201cacyltransferase\u201d[Title/Abstract])，保存前10篇。' },
-          { day: 11, date: '8/6 周四', topic: 'Web of Science', content: 'WoS核心合集检索；引文追踪（被引文献/参考文献）；按被引频次排序。', task: '找一篇SCPL相关高被引论文，点\u201c被引频次\u201d看谁引用了它，挑2篇保存。' },
-          { day: 12, date: '8/7 周五', topic: 'Google Scholar', content: 'Google Scholar高级搜索；全文获取技巧；用DOI号定位文献。', task: '搜\u201cPenthorum chinense transcriptome\u201d，找到赶黄草转录组论文，记下DOI。' },
-          { day: 13, date: '8/8 周六', topic: '课题专项检索', content: '围绕赶黄草SCPL课题做完整文献\u201c拉网\u201d。构建中英文检索式，三库各执行一遍，去重导入Zotero分类。', task: '建立Zotero\u201c赶黄草-SCPL\u201d专题库，本周累计导入>=30篇。' },
-          { day: 14, date: '8/9 周日', topic: '周复盘', content: '整理所有检索式，存成\u201c检索式清单\u201d文档。记录检索中遇到的困难。统计Zotero库现有文献数。', task: '完成周复盘' }
+          { day: 8, date: '8/3 周一', topic: '数据库全景', content: '中文(CNKI/万方/维普)；英文(PubMed/WoS/Google Scholar)；全文获取途径。', task: '确认学校图书馆能访问哪些数据库。', goal: '了解中外文献数据库全景', materials: 'CNKI、PubMed、WoS、Google Scholar官网', selfTest: '查中文/英文文献首选哪个数据库？获取全文的合法途径？' },
+          { day: 9, date: '8/4 周二', topic: 'CNKI高级检索', content: '高级检索多字段组合；检索式语法AND/OR/NOT；句子检索、知网节。', task: '在CNKI检索\u201c赶黄草 AND (黄酮 OR 转录组)\u201d，用Zotero保存前5篇。', goal: '掌握CNKI高级检索', materials: 'CNKI高级检索帮助文档', selfTest: 'AND/OR/NOT分别什么作用？"赶黄草 AND (黄酮 OR 转录组)"查什么范围？' },
+          { day: 10, date: '8/5 周三', topic: 'PubMed与MeSH', content: 'PubMed高级检索；MeSH主题词；字段限定[Title/Abstract]。', task: '执行检索式\u201cPenthorum chinense\u201d[Title/Abstract] OR (\u201cSCPL\u201d[Title/Abstract] AND \u201cacyltransferase\u201d[Title/Abstract])，保存前10篇。', goal: '掌握PubMed检索与MeSH主题词', materials: 'PubMed帮助中心MeSH教程', selfTest: '什么是MeSH主题词？[Title/Abstract]的作用？' },
+          { day: 11, date: '8/6 周四', topic: 'Web of Science', content: 'WoS核心合集检索；引文追踪（被引文献/参考文献）；按被引频次排序。', task: '找一篇SCPL相关高被引论文，点\u201c被引频次\u201d看谁引用了它，挑2篇保存。', goal: '掌握Web of Science引文追踪', materials: 'WoS在线教程', selfTest: '什么是引文追踪？"被引文献"和"参考文献"的区别？' },
+          { day: 12, date: '8/7 周五', topic: 'Google Scholar', content: 'Google Scholar高级搜索；全文获取技巧；用DOI号定位文献。', task: '搜\u201cPenthorum chinense transcriptome\u201d，找到赶黄草转录组论文，记下DOI。', goal: '掌握Google Scholar高级搜索', materials: 'Google Scholar高级搜索帮助', selfTest: 'Google Scholar相比PubMed的优劣？已知DOI怎么找全文？' },
+          { day: 13, date: '8/8 周六', topic: '课题专项检索', content: '围绕赶黄草SCPL课题做完整文献\u201c拉网\u201d。构建中英文检索式，三库各执行一遍，去重导入Zotero分类。', task: '建立Zotero\u201c赶黄草-SCPL\u201d专题库，本周累计导入>=30篇。', goal: '围绕赶黄草SCPL课题做完整文献拉网', materials: 'CNKI+PubMed+WoS+Zotero', selfTest: '你构建的中英文检索式是什么？导入了多少篇？' },
+          { day: 14, date: '8/9 周日', topic: '周复盘', content: '整理所有检索式，存成\u201c检索式清单\u201d文档。记录检索中遇到的困难。统计Zotero库现有文献数。', task: '完成周复盘', goal: '整理本周检索成果', materials: '本周检索式和笔记', selfTest: '本周检索最大困难？写出3条学会的技巧。' }
         ]
       },
       {
@@ -688,13 +688,13 @@ const ContentData = {
         title: '第3周 \u00b7 文献筛选与精读',
         date: '8/10-8/16',
         days: [
-          { day: 15, date: '8/10 周一', topic: '漏斗筛选法', content: '漏斗：初筛1000篇\u2192题摘筛100篇\u2192全文筛30篇\u2192精读10篇；三层筛选标准。', task: '对库里30篇文献做第一层筛选，标记\u201c精读候选\u201d约8-10篇。' },
-          { day: 16, date: '8/11 周二', topic: '三遍阅读法', content: '第一遍(15-20min)看标题/摘要/结论/图表；第二遍(1-2h)读全文标概念；第三遍(数小时)复现推导。', task: '挑1篇赶黄草中文综述做第一遍阅读，用3句话概括。' },
-          { day: 17, date: '8/12 周三', topic: 'IMRaD拆解法', content: 'IMRaD = Introduction/Methods/Results/Discussion；读论文推荐顺序。', task: '用IMRaD框架拆解1篇论文，每部分写一句话概括。' },
-          { day: 18, date: '8/13 周四', topic: 'Zotero深度使用', content: '彩色标签体系(红=必读/黄=重要/绿=已读/蓝=待读)；笔记功能；集合分层。', task: '为Zotero库建立4色标签体系，给已有文献打标签。' },
-          { day: 19, date: '8/14 周五', topic: '文献笔记体系', content: '笔记模板(题目/作者/年份/方法/核心结论/启发/疑问)；工具推荐(MarginNote/小绿鲸)。', task: '设计自己的文献笔记模板，存为可复用模板。' },
-          { day: 20, date: '8/15 周六', topic: '精读实战', content: '用三遍法精读赶黄草转录组论文。重点提取：是否注释到SCPL基因？黄酮合成通路基因是否完整？数据是否公开？', task: '产出1份完整精读笔记。' },
-          { day: 21, date: '8/16 周日', topic: '周复盘', content: '检查Zotero库：标签是否打全？笔记是否完整？整理本周精读笔记，归档到\u201c已读\u201d集合。', task: '完成周复盘' }
+          { day: 15, date: '8/10 周一', topic: '漏斗筛选法', content: '漏斗：初筛1000篇\u2192题摘筛100篇\u2192全文筛30篇\u2192精读10篇；三层筛选标准。', task: '对库里30篇文献做第一层筛选，标记\u201c精读候选\u201d约8-10篇。', goal: '学会漏斗筛选法', materials: 'Zotero库已有文献', selfTest: '漏斗法三层筛选分别看什么？每篇花多少时间？' },
+          { day: 16, date: '8/11 周二', topic: '三遍阅读法', content: '第一遍(15-20min)看标题/摘要/结论/图表；第二遍(1-2h)读全文标概念；第三遍(数小时)复现推导。', task: '挑1篇赶黄草中文综述做第一遍阅读，用3句话概括。', goal: '掌握三遍阅读法', materials: '赶黄草中文综述1篇', selfTest: '三遍阅读法每遍的目标和耗时？第一遍看哪些部分？' },
+          { day: 17, date: '8/12 周三', topic: 'IMRaD拆解法', content: 'IMRaD = Introduction/Methods/Results/Discussion；读论文推荐顺序。', task: '用IMRaD框架拆解1篇论文，每部分写一句话概括。', goal: '掌握IMRaD拆解法', materials: '1篇赶黄草相关论文', selfTest: 'IMRaD四个字母代表什么？读论文的推荐顺序？' },
+          { day: 18, date: '8/13 周四', topic: 'Zotero深度使用', content: '彩色标签体系(红=必读/黄=重要/绿=已读/蓝=待读)；笔记功能；集合分层。', task: '为Zotero库建立4色标签体系，给已有文献打标签。', goal: 'Zotero深度使用：标签+笔记+集合', materials: 'Zotero官方帮助文档', selfTest: '你的4色标签代表什么？集合和标签的区别？' },
+          { day: 19, date: '8/14 周五', topic: '文献笔记体系', content: '笔记模板(题目/作者/年份/方法/核心结论/启发/疑问)；工具推荐(MarginNote/小绿鲸)。', task: '设计自己的文献笔记模板，存为可复用模板。', goal: '建立个人文献笔记体系', materials: 'MarginNote/小绿鲸试用', selfTest: '你的笔记模板包含哪些字段？为什么"启发"比"摘抄"重要？' },
+          { day: 20, date: '8/15 周六', topic: '精读实战', content: '用三遍法精读赶黄草转录组论文。重点提取：是否注释到SCPL基因？黄酮合成通路基因是否完整？数据是否公开？', task: '产出1份完整精读笔记。', goal: '精读赶黄草转录组论文', materials: '赶黄草转录组论文全文', selfTest: '赶黄草转录组论文是否注释到SCPL基因？数据是否公开？' },
+          { day: 21, date: '8/16 周日', topic: '周复盘', content: '检查Zotero库：标签是否打全？笔记是否完整？整理本周精读笔记，归档到\u201c已读\u201d集合。', task: '完成周复盘', goal: '整理本周精读笔记', materials: '本周精读笔记', selfTest: '精读最难的部分是什么？本周精读了几篇？' }
         ]
       },
       {
@@ -702,13 +702,13 @@ const ContentData = {
         title: '第4周 \u00b7 学术写作结构',
         date: '8/17-8/23',
         days: [
-          { day: 22, date: '8/17 周一', topic: '标题和摘要', content: '标题公式[对象/方法]+[核心发现]；摘要\u201c八股\u201d：背景1句\u2192目的1句\u2192方法2-3句\u2192结果3-4句\u2192结论1句。', task: '为赶黄草SCPL课题拟3个候选标题，写一段200词摘要初稿。' },
-          { day: 23, date: '8/18 周二', topic: '引言', content: '倒漏斗：大背景\u2192小背景\u2192知识缺口\u2192本研究目的；每段开头用主题句。', task: '为赶黄草SCPL课题写引言提纲（4段，每段一句话主旨）。' },
-          { day: 24, date: '8/19 周三', topic: '材料与方法', content: '核心原则：让别人能重复你的实验；必须包含材料来源/实验设计/操作步骤/数据分析；常用被动语态。', task: '列出克隆赶黄草SCPL基因的方法部分小标题框架(6-8个)。' },
-          { day: 25, date: '8/20 周四', topic: '结果', content: '只呈现事实不解释；按逻辑顺序组织；每个结果配图表；用过去时态。', task: '读一篇SCPL论文的结果部分，把每段第一句摘出来看逻辑链。' },
-          { day: 26, date: '8/21 周五', topic: '讨论', content: '结构：概括发现\u2192逐条解释(与文献对比)\u2192研究意义\u2192局限\u2192展望；每个结果回答So what?', task: '针对一个假想结果写一段讨论(约150字)，含与文献对比。' },
-          { day: 27, date: '8/22 周六', topic: '整篇拆解', content: '选1篇高质量原创研究，用表格记录每部分每段写了什么、用了什么方法、引用了哪些文献。', task: '产出1份\u201c论文结构拆解表\u201d。' },
-          { day: 28, date: '8/23 周日', topic: '周复盘', content: '回顾IMRaD四部分写作要点，自测能否复述。整理本周写的所有提纲/片段到一份文档。', task: '完成周复盘' }
+          { day: 22, date: '8/17 周一', topic: '标题和摘要', content: '标题公式[对象/方法]+[核心发现]；摘要\u201c八股\u201d：背景1句\u2192目的1句\u2192方法2-3句\u2192结果3-4句\u2192结论1句。', task: '为赶黄草SCPL课题拟3个候选标题，写一段200词摘要初稿。', goal: '掌握标题和摘要的写法', materials: '赶黄草SCPL课题相关文献摘要', selfTest: '摘要"八股"是哪5部分？好标题的公式？' },
+          { day: 23, date: '8/18 周二', topic: '引言', content: '倒漏斗：大背景\u2192小背景\u2192知识缺口\u2192本研究目的；每段开头用主题句。', task: '为赶黄草SCPL课题写引言提纲（4段，每段一句话主旨）。', goal: '掌握引言倒漏斗结构', materials: '赶黄草SCPL课题背景文献', selfTest: '引言倒漏斗是哪4层？最后一段写什么？' },
+          { day: 24, date: '8/19 周三', topic: '材料与方法', content: '核心原则：让别人能重复你的实验；必须包含材料来源/实验设计/操作步骤/数据分析；常用被动语态。', task: '列出克隆赶黄草SCPL基因的方法部分小标题框架(6-8个)。', goal: '掌握材料与方法的写作规范', materials: 'SCPL相关论文方法部分', selfTest: '材料与方法的核心原则？什么情况可简写？' },
+          { day: 25, date: '8/20 周四', topic: '结果', content: '只呈现事实不解释；按逻辑顺序组织；每个结果配图表；用过去时态。', task: '读一篇SCPL论文的结果部分，把每段第一句摘出来看逻辑链。', goal: '掌握结果部分的写作', materials: '1篇SCPL论文结果部分', selfTest: '结果部分核心原则？用什么时态？' },
+          { day: 26, date: '8/21 周五', topic: '讨论', content: '结构：概括发现\u2192逐条解释(与文献对比)\u2192研究意义\u2192局限\u2192展望；每个结果回答So what?', task: '针对一个假想结果写一段讨论(约150字)，含与文献对比。', goal: '掌握讨论部分的结构', materials: 'SCPL相关论文讨论部分', selfTest: '讨论结构是哪5层？每个结果要回答什么(英文两词)？' },
+          { day: 27, date: '8/22 周六', topic: '整篇拆解', content: '选1篇高质量原创研究，用表格记录每部分每段写了什么、用了什么方法、引用了哪些文献。', task: '产出1份\u201c论文结构拆解表\u201d。', goal: '整篇论文拆解实战', materials: '1篇高质量原创研究论文', selfTest: '你拆解的论文引言几段？结果按什么逻辑组织？' },
+          { day: 28, date: '8/23 周日', topic: '周复盘', content: '回顾IMRaD四部分写作要点，自测能否复述。整理本周写的所有提纲/片段到一份文档。', task: '完成周复盘', goal: '回顾IMRaD四部分写作要点', materials: '本周所有写作提纲和片段', selfTest: 'IMRaD四部分哪个最难写？写出3条没把握的地方。' }
         ]
       },
       {
@@ -716,13 +716,13 @@ const ContentData = {
         title: '第5周 \u00b7 写作语言与规范',
         date: '8/24-8/30',
         days: [
-          { day: 29, date: '8/24 周一', topic: '学术语言规范', content: '客观性(避免I think)；时态(引言现在时/方法结果过去时)；被动语态；简洁性。', task: '把上周写的摘要按语言规范自查修改。' },
-          { day: 30, date: '8/25 周二', topic: '图表制作', content: '图展示趋势/分布，表展示精确数值；图注必须自包含；分辨率/字号/坐标轴规范。', task: '为假想SCPL实验结果设计1张图(草图)并写图注。' },
-          { day: 31, date: '8/26 周三', topic: '参考文献格式', content: '常见格式(APA/Vancouver/Harvard)；用Zotero在Word中自动插入引用；引用原则。', task: '在Word用Zotero插入5条引用，生成APA和Vancouver两种格式。' },
-          { day: 32, date: '8/27 周四', topic: '学术诚信', content: '抄袭/自我抄袭/数据造假/一稿多投；查重工具(Turnitin/知网查重)。', task: '列出4种学术不端行为及各自后果。' },
-          { day: 33, date: '8/28 周五', topic: '写作辅助工具', content: 'Grammarly(语法检查)；DeepL Write(润色)；知云/小绿鲸(辅助阅读)；AI工具正确用法。', task: '用任一工具检查英文摘要，记录修改了哪些地方。' },
-          { day: 34, date: '8/29 周六', topic: '启动迷你综述', content: '主题\u201cSCPL酰基转移酶在药用植物黄酮修饰中的作用\u201d。列提纲(3-4个小标题)，完成引言段(约150字)。', task: '产出迷你综述提纲+引言段。' },
-          { day: 35, date: '8/30 周日', topic: '周复盘', content: '检查迷你综述提纲是否合理。回顾本周5个规范点，哪个最薄弱。', task: '完成周复盘' }
+          { day: 29, date: '8/24 周一', topic: '学术语言规范', content: '客观性(避免I think)；时态(引言现在时/方法结果过去时)；被动语态；简洁性。', task: '把上周写的摘要按语言规范自查修改。', goal: '掌握学术语言规范', materials: '上周写的摘要初稿', selfTest: '引言用什么时态？方法结果呢？为什么避免"I think"？' },
+          { day: 30, date: '8/25 周二', topic: '图表制作', content: '图展示趋势/分布，表展示精确数值；图注必须自包含；分辨率/字号/坐标轴规范。', task: '为假想SCPL实验结果设计1张图(草图)并写图注。', goal: '掌握图表制作规范', materials: '假想SCPL实验结果数据', selfTest: '图和表分别适合展示什么？图注的核心要求(三个字)？' },
+          { day: 31, date: '8/26 周三', topic: '参考文献格式', content: '常见格式(APA/Vancouver/Harvard)；用Zotero在Word中自动插入引用；引用原则。', task: '在Word用Zotero插入5条引用，生成APA和Vancouver两种格式。', goal: '掌握参考文献格式和Zotero引用', materials: 'Zotero+Word插件', selfTest: 'APA和Vancouver的区别？引用文献3个原则？' },
+          { day: 32, date: '8/27 周四', topic: '学术诚信', content: '抄袭/自我抄袭/数据造假/一稿多投；查重工具(Turnitin/知网查重)。', task: '列出4种学术不端行为及各自后果。', goal: '了解学术诚信规范', materials: 'Turnitin/知网查重工具介绍', selfTest: '列出4种学术不端行为。"自我抄袭"是什么意思？' },
+          { day: 33, date: '8/28 周五', topic: '写作辅助工具', content: 'Grammarly(语法检查)；DeepL Write(润色)；知云/小绿鲸(辅助阅读)；AI工具正确用法。', task: '用任一工具检查英文摘要，记录修改了哪些地方。', goal: '掌握写作辅助工具', materials: 'Grammarly、DeepL Write、知云/小绿鲸', selfTest: 'Grammarly和DeepL Write分别用于什么？AI工具的正确用法和红线？' },
+          { day: 34, date: '8/29 周六', topic: '启动迷你综述', content: '主题\u201cSCPL酰基转移酶在药用植物黄酮修饰中的作用\u201d。列提纲(3-4个小标题)，完成引言段(约150字)。', task: '产出迷你综述提纲+引言段。', goal: '启动迷你综述写作', materials: 'SCPL酰基转移酶相关文献', selfTest: '你的综述提纲有几个小标题？引言核心论点是什么？' },
+          { day: 35, date: '8/30 周日', topic: '周复盘', content: '检查迷你综述提纲是否合理。回顾本周5个规范点，哪个最薄弱。', task: '完成周复盘', goal: '回顾本周5个规范点', materials: '迷你综述提纲+引言段', selfTest: '本周5个规范点哪个最薄弱？下周写综述要注意什么？' }
         ]
       },
       {
@@ -730,13 +730,13 @@ const ContentData = {
         title: '第6周 \u00b7 写作实操+投稿入门',
         date: '8/31-9/6',
         days: [
-          { day: 36, date: '8/31 周一', topic: '\u2605 实习最后一天 + 完成综述主体', content: '按提纲展开2-3个主体段落；每段：主题句\u2192证据(引用)\u2192小结。', task: '完成迷你综述主体(约250字)，含至少5条引用。' },
-          { day: 37, date: '9/1 周二', topic: '完成综述终稿', content: '结论段：总结要点+指出研究空白+展望；通读全文检查逻辑/引用/语言。', task: '产出完整迷你综述(约500字)终稿。' },
-          { day: 38, date: '9/2 周三', topic: '投稿全流程', content: '流程：选刊\u2192读投稿指南\u2192改格式\u2192写Cover Letter\u2192系统投稿\u2192等初审；投稿系统类型。', task: '找1个期刊的Author Guidelines，列出格式要求。' },
-          { day: 39, date: '9/3 周四', topic: '选刊工具JANE', content: 'JANE输入摘要推荐期刊；Journal Finder；选刊三原则(主题匹配>方法匹配>水平匹配)。', task: '把迷你综述摘要输入JANE，记录推荐的前10个期刊。' },
-          { day: 40, date: '9/4 周五', topic: 'Cover Letter', content: '结构：称呼\u2192投稿声明+题目\u2192核心发现\u2192推荐理由\u2192声明\u2192结尾；决定编辑是否送审。', task: '为迷你综述写一封Cover Letter初稿(英文)。' },
-          { day: 41, date: '9/5 周六', topic: '选刊实操', content: '用JANE推荐+LetPub查证，每个期刊查分区/IF/审稿周期/录用率/Scope。定3个：冲刺/匹配/保底。', task: '产出\u201c3目标期刊对比表\u201d。' },
-          { day: 42, date: '9/6 周日', topic: '周复盘', content: '检查：迷你综述终稿/Cover Letter/选刊表是否都完成。三样硬产出整理归档。', task: '完成周复盘' }
+          { day: 36, date: '8/31 周一', topic: '\u2605 实习最后一天 + 完成综述主体', content: '按提纲展开2-3个主体段落；每段：主题句\u2192证据(引用)\u2192小结。', task: '完成迷你综述主体(约250字)，含至少5条引用。', goal: '完成迷你综述主体段落', materials: '迷你综述提纲+文献引用', selfTest: '每个主体段落的标准结构？你插了多少条引用？' },
+          { day: 37, date: '9/1 周二', topic: '完成综述终稿', content: '结论段：总结要点+指出研究空白+展望；通读全文检查逻辑/引用/语言。', task: '产出完整迷你综述(约500字)终稿。', goal: '完成迷你综述终稿', materials: '迷你综述主体+结论', selfTest: '结论段包含哪三部分？通读全文检查什么？' },
+          { day: 38, date: '9/2 周三', topic: '投稿全流程', content: '流程：选刊\u2192读投稿指南\u2192改格式\u2192写Cover Letter\u2192系统投稿\u2192等初审；投稿系统类型。', task: '找1个期刊的Author Guidelines，列出格式要求。', goal: '了解投稿全流程', materials: '期刊Author Guidelines', selfTest: '投稿完整流程(6步)？投稿前自查哪些项目？' },
+          { day: 39, date: '9/3 周四', topic: '选刊工具JANE', content: 'JANE输入摘要推荐期刊；Journal Finder；选刊三原则(主题匹配>方法匹配>水平匹配)。', task: '把迷你综述摘要输入JANE，记录推荐的前10个期刊。', goal: '掌握选刊工具JANE', materials: 'JANE(jane.biosemantics.org)', selfTest: 'JANE的工作原理？选刊三原则？哪个最重要？' },
+          { day: 40, date: '9/4 周五', topic: 'Cover Letter', content: '结构：称呼\u2192投稿声明+题目\u2192核心发现\u2192推荐理由\u2192声明\u2192结尾；决定编辑是否送审。', task: '为迷你综述写一封Cover Letter初稿(英文)。', goal: '学会写Cover Letter', materials: 'Cover Letter模板和示例', selfTest: 'Cover Letter结构(6部分)？它决定了什么？' },
+          { day: 41, date: '9/5 周六', topic: '选刊实操', content: '用JANE推荐+LetPub查证，每个期刊查分区/IF/审稿周期/录用率/Scope。定3个：冲刺/匹配/保底。', task: '产出\u201c3目标期刊对比表\u201d。', goal: '完成选刊实操', materials: 'JANE+LetPub数据', selfTest: '你的3个目标期刊分别什么定位？为什么这样排序？' },
+          { day: 42, date: '9/6 周日', topic: '周复盘', content: '检查：迷你综述终稿/Cover Letter/选刊表是否都完成。三样硬产出整理归档。', task: '完成周复盘', goal: '整理三样硬产出', materials: '迷你综述终稿/Cover Letter/选刊表', selfTest: '三样硬产出都完成了吗？还差什么？' }
         ]
       },
       {
@@ -744,13 +744,13 @@ const ContentData = {
         title: '第7周 \u00b7 审稿应对+总复习',
         date: '9/7-9/13',
         days: [
-          { day: 43, date: '9/7 周一', topic: '审稿流程', content: '状态链：Submitted\u2192With Editor\u2192Under Review\u2192Major/Minor Revision\u2192Accepted/Rejected；Desk Reject。', task: '画出审稿状态流程图，标注每个状态可能耗时。' },
-          { day: 44, date: '9/8 周二', topic: 'Response Letter', content: '格式：逐条回复(审稿人原意见+你的回应+修改位置)；态度：礼貌客观有理有据。', task: '假设审稿人提了1条意见，写一段礼貌回复。' },
-          { day: 45, date: '9/9 周三', topic: '被拒应对', content: 'Desk Reject换刊重投；审稿后拒但给意见\u2192认真改转投；建议转投(Transfer)策略。', task: '写一份\u201c被拒应对清单\u201d(3-4步)。' },
-          { day: 46, date: '9/10 周四', topic: '投稿期刊清单', content: '按档次整理适合你方向的期刊；记录Scope/分区/IF/周期。', task: '产出\u201c个人投稿期刊库\u201d(8-10个期刊，按档次排序)。' },
-          { day: 47, date: '9/11 周五', topic: '总复习', content: '回顾4大模块；自测能否讲清\u201cIF怎么算\u201d\u201cIMRaD各部分写什么\u201d\u201c被拒怎么办\u201d。', task: '写一份\u201c7周学习总复盘\u201d(500字)。' },
-          { day: 48, date: '9/12 周六', topic: '综合自测', content: '解释SCI/SCIE/IF/Q1/Top期刊；现场用PubMed检索(限时15分钟)；用Zotero插入引用切换格式；口述IMRaD框架；口述选刊流程和被拒应对。', task: '完成自测，记录得分，标记不熟练项。' },
-          { day: 49, date: '9/13 周日', topic: '\u2605 结业+下一阶段规划', content: '清点7周全部产出：Zotero文献库/精读笔记/结构拆解表/迷你综述/Cover Letter/选刊表/期刊库/复盘。制定下一阶段计划：文献精读深化+生信技能(Linux/R)+导师课题衔接。', task: '给导师发一封邮件，汇报暑期学习成果，询问入学准备。' }
+          { day: 43, date: '9/7 周一', topic: '审稿流程', content: '状态链：Submitted\u2192With Editor\u2192Under Review\u2192Major/Minor Revision\u2192Accepted/Rejected；Desk Reject。', task: '画出审稿状态流程图，标注每个状态可能耗时。', goal: '了解审稿全流程', materials: '审稿流程相关文章', selfTest: '审稿状态链是什么？Desk Reject是什么意思？' },
+          { day: 44, date: '9/8 周二', topic: 'Response Letter', content: '格式：逐条回复(审稿人原意见+你的回应+修改位置)；态度：礼貌客观有理有据。', task: '假设审稿人提了1条意见，写一段礼貌回复。', goal: '学会写Response Letter', materials: 'Response Letter模板和示例', selfTest: 'Response Letter的标准格式？不同意审稿意见怎么处理？' },
+          { day: 45, date: '9/9 周三', topic: '被拒应对', content: 'Desk Reject换刊重投；审稿后拒但给意见\u2192认真改转投；建议转投(Transfer)策略。', task: '写一份\u201c被拒应对清单\u201d(3-4步)。', goal: '学会被拒应对策略', materials: '被拒应对相关文章', selfTest: 'Desk Reject后怎么办？"建议转投"什么情况接受/拒绝？' },
+          { day: 46, date: '9/10 周四', topic: '投稿期刊清单', content: '按档次整理适合你方向的期刊；记录Scope/分区/IF/周期。', task: '产出\u201c个人投稿期刊库\u201d(8-10个期刊，按档次排序)。', goal: '建立个人投稿期刊库', materials: 'LetPub+JANE数据', selfTest: '你整理了哪些期刊？排第一的为什么排第一？' },
+          { day: 47, date: '9/11 周五', topic: '总复习', content: '回顾4大模块；自测能否讲清\u201cIF怎么算\u201d\u201cIMRaD各部分写什么\u201d\u201c被拒怎么办\u201d。', task: '写一份\u201c7周学习总复盘\u201d(500字)。', goal: '7周总复习', materials: '7周全部笔记', selfTest: '4大模块各用一句话概括。哪个最薄弱？' },
+          { day: 48, date: '9/12 周六', topic: '综合自测', content: '解释SCI/SCIE/IF/Q1/Top期刊；现场用PubMed检索(限时15分钟)；用Zotero插入引用切换格式；口述IMRaD框架；口述选刊流程和被拒应对。', task: '完成自测，记录得分，标记不熟练项。', goal: '综合自测', materials: '全部学习材料', selfTest: '5道自测题答对几道？哪些不熟练？' },
+          { day: 49, date: '9/13 周日', topic: '\u2605 结业+下一阶段规划', content: '清点7周全部产出：Zotero文献库/精读笔记/结构拆解表/迷你综述/Cover Letter/选刊表/期刊库/复盘。制定下一阶段计划：文献精读深化+生信技能(Linux/R)+导师课题衔接。', task: '给导师发一封邮件，汇报暑期学习成果，询问入学准备。', goal: '结业+下一阶段规划', materials: '7周全部产出清单', selfTest: '7周最大收获？下一阶段最想先做什么？给导师的邮件发了吗？' }
         ]
       }
     ],
