@@ -1556,6 +1556,218 @@ const App = (() => {
           <p class="card-desc">${report.constitution.dietAdvice}</p>
           <p class="card-note">推荐：${report.constitution.recommendFoods.join('、')}</p>
         </div>
+
+        <!-- ========== 底部板块：月日历 + 周进度 ========== -->
+        <div class="home-calendar-section" style="margin-top:8px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding:0 4px;">
+            <h3 style="font-size:1rem;font-weight:600;color:var(--color-text);">&#128197; 日历与进度</h3>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-outline btn-sm" id="home-cal-month-btn">&#128197; 月日历</button>
+              <button class="btn btn-outline btn-sm" id="home-cal-week-btn">&#128198; 周进度</button>
+            </div>
+          </div>
+
+          ${(() => {
+            // ===== 迷你月日历 =====
+            const cYear = today.getFullYear();
+            const cMonth = today.getMonth();
+            const cToday = today.getDate();
+            const firstDayDow = new Date(cYear, cMonth, 1).getDay();
+            const daysInMonth = new Date(cYear, cMonth + 1, 0).getDate();
+            const miniWeekDays = ['日', '一', '二', '三', '四', '五', '六'];
+
+            // 收集本月计划
+            const calPlans = [
+              ...DataManager.get('dailyPlans'),
+              ...DataManager.get('weeklyPlans'),
+              ...DataManager.get('monthlyPlans')
+            ];
+            const calMilestones = (typeof ContentData !== 'undefined' && ContentData.fiveYearPlan && ContentData.fiveYearPlan.milestones) || [];
+            const eventsByDayMini = {};
+            calPlans.forEach(p => {
+              if (!p.date) return;
+              const d = new Date(p.date);
+              if (d.getFullYear() === cYear && d.getMonth() === cMonth) {
+                const day = d.getDate();
+                if (!eventsByDayMini[day]) eventsByDayMini[day] = [];
+                eventsByDayMini[day].push(p);
+              }
+            });
+            calMilestones.forEach(m => {
+              const parts = m.date.split('.');
+              if (parseInt(parts[0]) === cYear && parseInt(parts[1]) === cMonth + 1) {
+                const day = parseInt(parts[2]);
+                if (!eventsByDayMini[day]) eventsByDayMini[day] = [];
+                eventsByDayMini[day].push({ title: m.event, priority: 'high', done: false, isMilestone: true });
+              }
+            });
+
+            let miniCells = '';
+            for (let i = 0; i < firstDayDow; i++) miniCells += '<div class="mini-cal-cell mini-cal-empty"></div>';
+            for (let d = 1; d <= daysInMonth; d++) {
+              const isToday = d === cToday;
+              const events = eventsByDayMini[d] || [];
+              const hasHigh = events.some(e => e.priority === 'high' || e.isMilestone);
+              const allDone = events.length > 0 && events.every(e => e.done);
+              const dots = events.slice(0, 3).map(e => {
+                const dc = e.isMilestone ? 'var(--color-danger)' : e.priority === 'high' ? 'var(--color-danger)' : e.priority === 'medium' ? 'var(--color-warning)' : 'var(--color-primary)';
+                return `<span style="display:inline-block;width:4px;height:4px;border-radius:50%;background:${e.done ? 'var(--color-border)' : dc};"></span>`;
+              }).join('');
+              miniCells += `<div class="mini-cal-cell ${isToday ? 'mini-cal-today' : ''} ${hasHigh ? 'mini-cal-has-high' : ''} ${allDone ? 'mini-cal-all-done' : ''}" data-day="${d}">
+                <span class="mini-cal-num">${d}</span>
+                <div class="mini-cal-dots">${dots}</div>
+              </div>`;
+            }
+
+            // 本月关键节点
+            const monthMilestonesMini = calMilestones.filter(m => {
+              const parts = m.date.split('.');
+              return parseInt(parts[0]) === cYear && parseInt(parts[1]) === cMonth + 1;
+            });
+
+            // ===== 迷你周进度 =====
+            const wTodayDay = today.getDay();
+            const wMonday = new Date(today);
+            wMonday.setDate(today.getDate() - (wTodayDay === 0 ? 6 : wTodayDay - 1));
+            const wWeekDays = ['一', '二', '三', '四', '五', '六', '日'];
+            const wWeekDates = [];
+            for (let i = 0; i < 7; i++) {
+              const d = new Date(wMonday);
+              d.setDate(wMonday.getDate() + i);
+              wWeekDates.push(d);
+            }
+            const wDailyPlans = DataManager.get('dailyPlans');
+            const wWeekTasks = {};
+            wDailyPlans.forEach(p => {
+              if (!p.date) return;
+              const idx = wWeekDates.findIndex(d =>
+                d.getFullYear() === new Date(p.date).getFullYear() &&
+                d.getMonth() === new Date(p.date).getMonth() &&
+                d.getDate() === new Date(p.date).getDate()
+              );
+              if (idx >= 0 && idx < 7) {
+                if (!wWeekTasks[idx]) wWeekTasks[idx] = [];
+                wWeekTasks[idx].push(p);
+              }
+            });
+            const wAllTasks = Object.values(wWeekTasks).flat();
+            const wDone = wAllTasks.filter(t => t.done).length;
+            const wTotal = wAllTasks.length;
+            const wPct = wTotal > 0 ? Math.round(wDone / wTotal * 100) : 0;
+
+            // 学习任务完成状态
+            const studyTaskStatus = DataManager.get('studyTaskStatus') || {};
+            let studyDoneThisWeek = 0, studyTotalThisWeek = 0;
+            if (typeof ContentData !== 'undefined' && ContentData.researchPlan) {
+              const rp = ContentData.researchPlan;
+              const startD = new Date('2026-07-27');
+              const daysDiff = Math.floor((today - startD) / 86400000);
+              const curWeek = Math.floor(daysDiff / 7);
+              if (curWeek >= 0 && curWeek < rp.weeklySchedule.length) {
+                rp.weeklySchedule[curWeek].days.forEach((d, i) => {
+                  const key = `w${curWeek + 1}-d${i}`;
+                  studyTotalThisWeek++;
+                  if (studyTaskStatus[key] === 'done' || studyTaskStatus[key] === 'makeup') studyDoneThisWeek++;
+                });
+              }
+            }
+
+            // 本周里程碑
+            const wMilestones = calMilestones.filter(m => {
+              const parts = m.date.split('.');
+              const mDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]) || 1);
+              return mDate >= wWeekDates[0] && mDate <= wWeekDates[6];
+            });
+
+            return `
+              <!-- 迷你月日历 -->
+              <div class="card" style="padding:12px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                  <span style="font-size:0.85rem;font-weight:600;color:var(--color-text);">${cYear}年${cMonth + 1}月</span>
+                  <span class="tag tag-date-small">今日${cToday}日</span>
+                </div>
+                <div class="mini-cal-grid">
+                  ${miniWeekDays.map((w, i) => `<div class="mini-cal-head ${i === 0 || i === 6 ? 'mini-cal-weekend' : ''}">${w}</div>`).join('')}
+                  ${miniCells}
+                </div>
+                <!-- 图例 -->
+                <div style="display:flex;gap:10px;margin-top:8px;font-size:0.68rem;color:var(--color-text-tertiary);flex-wrap:wrap;">
+                  <span style="display:flex;align-items:center;gap:3px;"><span style="width:6px;height:6px;border-radius:50%;background:var(--color-danger);"></span>重要</span>
+                  <span style="display:flex;align-items:center;gap:3px;"><span style="width:6px;height:6px;border-radius:50%;background:var(--color-warning);"></span>中等</span>
+                  <span style="display:flex;align-items:center;gap:3px;"><span style="width:6px;height:6px;border-radius:50%;background:var(--color-primary);"></span>普通</span>
+                </div>
+                <!-- 本月关键节点 -->
+                ${monthMilestonesMini.length > 0 ? `
+                <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--color-border);">
+                  <div style="font-size:0.76rem;color:var(--color-text-secondary);margin-bottom:4px;">&#128204; 本月关键节点</div>
+                  ${monthMilestonesMini.map(m => {
+                    const parts = m.date.split('.');
+                    const day = parseInt(parts[2]);
+                    return `<div style="font-size:0.76rem;color:var(--color-text);margin:2px 0;">
+                      <span class="tag tag-priority-high" style="font-size:0.68rem;padding:1px 6px;">${day}日</span>
+                      ${escapeHtml(m.event)}
+                    </div>`;
+                  }).join('')}
+                </div>` : ''}
+              </div>
+
+              <!-- 迷你周进度 -->
+              <div class="card" style="padding:12px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                  <span style="font-size:0.85rem;font-weight:600;color:var(--color-text);">本周进度</span>
+                  <span style="font-size:1.1rem;font-weight:700;color:var(--color-primary);">${wPct}%</span>
+                </div>
+                <!-- 进度条 -->
+                <div style="width:100%;height:8px;background:var(--color-border);border-radius:4px;overflow:hidden;margin-bottom:8px;">
+                  <div style="height:100%;width:${wPct}%;background:var(--color-primary);border-radius:4px;transition:width 0.3s;"></div>
+                </div>
+                <div style="display:flex;justify-content:space-between;font-size:0.72rem;color:var(--color-text-secondary);margin-bottom:10px;">
+                  <span>已完成 ${wDone}</span>
+                  <span>共 ${wTotal} 项</span>
+                  <span>剩余 ${wTotal - wDone} 项</span>
+                </div>
+
+                <!-- 7天卡片 -->
+                <div style="display:flex;gap:4px;margin-bottom:8px;">
+                  ${wWeekDates.map((d, i) => {
+                    const isToday = d.toDateString() === today.toDateString();
+                    const tasks = wWeekTasks[i] || [];
+                    const dayDone = tasks.filter(t => t.done).length;
+                    const dayTotal = tasks.length;
+                    return `
+                      <div style="flex:1;text-align:center;padding:4px 0;border-radius:6px;background:${isToday ? 'var(--color-primary-alpha)' : 'var(--color-bg)'};border:${isToday ? '1px solid var(--color-primary)' : '1px solid var(--color-border)'};">
+                        <div style="font-size:0.62rem;color:var(--color-text-tertiary);">${wWeekDays[i]}</div>
+                        <div style="font-size:0.72rem;font-weight:600;color:${isToday ? 'var(--color-primary-dark)' : 'var(--color-text)'};margin:1px 0;">${d.getDate()}</div>
+                        <div style="font-size:0.58rem;color:${dayTotal > 0 ? (dayDone === dayTotal ? 'var(--color-primary)' : 'var(--color-warning)') : 'var(--color-text-tertiary)'};">
+                          ${dayTotal > 0 ? dayDone + '/' + dayTotal : '-'}
+                        </div>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+
+                <!-- 学习进度 -->
+                ${studyTotalThisWeek > 0 ? `
+                <div style="padding:6px 8px;border-radius:6px;background:rgba(146,170,192,0.1);margin-bottom:6px;">
+                  <div style="display:flex;justify-content:space-between;font-size:0.76rem;">
+                    <span style="color:var(--color-info);">&#9998; 学习任务进度</span>
+                    <span style="color:var(--color-text);font-weight:500;">${studyDoneThisWeek}/${studyTotalThisWeek}</span>
+                  </div>
+                  <div style="width:100%;height:4px;background:var(--color-border);border-radius:2px;margin-top:4px;overflow:hidden;">
+                    <div style="height:100%;width:${Math.round(studyDoneThisWeek / studyTotalThisWeek * 100)}%;background:var(--color-info);border-radius:2px;"></div>
+                  </div>
+                </div>` : ''}
+
+                <!-- 本周里程碑 -->
+                ${wMilestones.length > 0 ? `
+                <div style="padding:6px 8px;border-radius:6px;background:rgba(201,155,155,0.1);">
+                  <div style="font-size:0.72rem;color:var(--color-danger);margin-bottom:2px;">&#9888; 本周里程碑</div>
+                  ${wMilestones.map(m => `<div style="font-size:0.74rem;color:var(--color-text);margin:2px 0;">&#128204; ${escapeHtml(m.event)} <span class="tag tag-date-small" style="font-size:0.66rem;">${escapeHtml(m.date)}</span></div>`).join('')}
+                </div>` : ''}
+              </div>
+            `;
+          })()}
+        </div>
       </div>
     `;
 
@@ -1567,6 +1779,19 @@ const App = (() => {
     // 绑定快速入口
     content.querySelectorAll('.quick-link').forEach(link => {
       link.addEventListener('click', () => Router.navigate(link.getAttribute('data-route')));
+    });
+
+    // 绑定底部日历按钮
+    const calMonthBtn = document.getElementById('home-cal-month-btn');
+    if (calMonthBtn) calMonthBtn.addEventListener('click', () => Router.navigate('calendar-month'));
+    const calWeekBtn = document.getElementById('home-cal-week-btn');
+    if (calWeekBtn) calWeekBtn.addEventListener('click', () => Router.navigate('calendar-week'));
+
+    // 绑定日历日期点击
+    content.querySelectorAll('.mini-cal-cell[data-day]').forEach(cell => {
+      cell.addEventListener('click', () => {
+        Router.navigate('calendar-month');
+      });
     });
   }
 
@@ -1781,7 +2006,22 @@ const App = (() => {
   // 文献管理
   function renderLiterature() {
     const content = document.getElementById('app-content');
-    const records = DataManager.get('literatureRecords');
+
+    // 自动导入待读文献（仅首次）
+    if (!DataManager.get('literatureImported') && typeof ContentData !== 'undefined' && ContentData.pendingLiterature) {
+      ContentData.pendingLiterature.forEach(lit => {
+        DataManager.addRecord('literatureRecords', { ...lit, date: new Date().toISOString().slice(0, 10) });
+      });
+      DataManager.set('literatureImported', true);
+      Toast.show('已导入5篇待读文献', 'success');
+    }
+
+    let records = DataManager.get('literatureRecords');
+    // 按优先级排序：最重要 > 普通
+    const priorityOrder = { '最重要': 0, '重要': 1, '普通': 2 };
+    records = records.slice().sort((a, b) => (priorityOrder[a.priority] || 3) - (priorityOrder[b.priority] || 3));
+
+    const importantCount = records.filter(r => r.priority === '最重要').length;
 
     content.innerHTML = `
       <div class="page">
@@ -1791,10 +2031,14 @@ const App = (() => {
           <button class="btn btn-primary btn-sm" id="btn-add-lit">+ 文献</button>
         </div>
 
-        <div class="stat-cards stat-cards-2">
+        <div class="stat-cards" style="grid-template-columns:repeat(3,1fr);">
           <div class="stat-card">
             <div class="stat-value">${records.length}</div>
             <div class="stat-label">总文献数</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${importantCount}</div>
+            <div class="stat-label">最重要</div>
           </div>
           <div class="stat-card">
             <div class="stat-value">${records.filter(r => r.status === '已读').length}</div>
@@ -1804,8 +2048,8 @@ const App = (() => {
 
         <div class="card-list">
           ${records.length === 0 ? '<div class="empty-state">暂无文献记录</div>' :
-            records.slice(-20).reverse().map(r => `
-              <div class="card record-card">
+            records.map(r => `
+              <div class="card record-card" style="${r.priority === '最重要' ? 'border-left:3px solid var(--color-danger);' : ''}">
                 <div class="record-header">
                   <span class="record-title">${escapeHtml(r.title || '无标题')}</span>
                   <span class="tag tag-${r.status === '已读' ? 'good' : r.status === '在读' ? 'info' : 'normal'}">${r.status || '未读'}</span>
@@ -1814,7 +2058,12 @@ const App = (() => {
                 ${r.journal ? `<p class="record-note">${escapeHtml(r.journal)} ${r.year || ''}</p>` : ''}
                 ${r.notes ? `<p class="record-note">${escapeHtml(r.notes)}</p>` : ''}
                 <div class="record-tags">
+                  ${r.priority ? `<span class="tag tag-${r.priority === '最重要' ? 'priority-high' : r.priority === '重要' ? 'priority-medium' : 'priority-low'}">${r.priority}</span>` : ''}
                   ${r.tags ? r.tags.split(/[,，]/).map(t => `<span class="tag tag-category">${escapeHtml(t.trim())}</span>`).join('') : ''}
+                </div>
+                <div class="record-actions">
+                  <button class="btn-edit" data-id="${r.id}">&#9998;</button>
+                  <button class="btn-delete" data-id="${r.id}">&#10007;</button>
                 </div>
               </div>
             `).join('')}
@@ -1830,6 +2079,7 @@ const App = (() => {
           { name: 'authors', label: '作者', type: 'text', placeholder: '作者列表' },
           { name: 'journal', label: '期刊', type: 'text', placeholder: '期刊名' },
           { name: 'year', label: '年份', type: 'number', placeholder: '2025' },
+          { name: 'priority', label: '优先级', type: 'select', options: ['最重要', '重要', '普通'] },
           { name: 'status', label: '阅读状态', type: 'select', options: ['未读', '在读', '已读'] },
           { name: 'tags', label: '标签(逗号分隔)', type: 'text', placeholder: '综述,实验方法' },
           { name: 'notes', label: '笔记', type: 'textarea', placeholder: '关键发现、方法要点' }
@@ -1840,6 +2090,46 @@ const App = (() => {
           Toast.show('文献已添加', 'success');
           renderLiterature();
         }
+      });
+    });
+
+    content.querySelectorAll('.btn-edit').forEach(el => {
+      el.addEventListener('click', () => {
+        const id = el.getAttribute('data-id');
+        const rec = records.find(r => r.id === id);
+        if (!rec) return;
+        Modal.openForm({
+          title: '编辑文献',
+          fields: [
+            { name: 'title', label: '标题', type: 'text', required: true, value: rec.title || '' },
+            { name: 'authors', label: '作者', type: 'text', value: rec.authors || '' },
+            { name: 'journal', label: '期刊', type: 'text', value: rec.journal || '' },
+            { name: 'year', label: '年份', type: 'number', value: rec.year || '' },
+            { name: 'priority', label: '优先级', type: 'select', value: rec.priority || '', options: ['最重要', '重要', '普通'] },
+            { name: 'status', label: '阅读状态', type: 'select', value: rec.status || '', options: ['未读', '在读', '已读'] },
+            { name: 'tags', label: '标签(逗号分隔)', type: 'text', value: rec.tags || '' },
+            { name: 'notes', label: '笔记', type: 'textarea', value: rec.notes || '' }
+          ],
+          onConfirm: (data) => {
+            DataManager.updateRecord('literatureRecords', id, data);
+            Toast.show('已更新', 'success');
+            renderLiterature();
+          }
+        });
+      });
+    });
+
+    content.querySelectorAll('.btn-delete').forEach(el => {
+      el.addEventListener('click', () => {
+        const id = el.getAttribute('data-id');
+        Modal.open({
+          title: '确认删除', content: '<p>确定要删除这篇文献吗？</p>', type: 'danger',
+          onConfirm: () => {
+            DataManager.deleteRecord('literatureRecords', id);
+            Toast.show('已删除', 'info');
+            renderLiterature();
+          }
+        });
       });
     });
   }
@@ -1996,7 +2286,27 @@ const App = (() => {
   // 产品库
   function renderSkincareProducts() {
     const content = document.getElementById('app-content');
+
+    // 自动导入皮肤战略产品（仅首次）
+    if (!DataManager.get('skinProductsImported') && typeof ContentData !== 'undefined' && ContentData.skinStrategy) {
+      ContentData.skinStrategy.products.forEach(p => {
+        DataManager.addRecord('skincareProducts', {
+          name: p.name,
+          brand: '',
+          category: p.type,
+          price: '',
+          status: p.disposal === '保留' ? '在用' : p.disposal === '暂停' ? '闲置' : p.disposal === '丢弃' ? '已用完' : '闲置',
+          expiry: '',
+          notes: `${p.reason}（来源：皮肤战略）`,
+          isStrategy: true
+        });
+      });
+      DataManager.set('skinProductsImported', true);
+      Toast.show('已导入皮肤战略产品', 'success');
+    }
+
     const products = DataManager.get('skincareProducts');
+    const monthlyAdditions = (typeof ContentData !== 'undefined' && ContentData.monthlyProductAdditions) ? ContentData.monthlyProductAdditions : null;
 
     content.innerHTML = `
       <div class="page">
@@ -2006,20 +2316,51 @@ const App = (() => {
           <button class="btn btn-primary btn-sm" id="btn-add-product">+ 产品</button>
         </div>
 
+        ${monthlyAdditions ? `
+        <!-- 本月建议添加产品 -->
+        <div class="card" style="border-left:4px solid var(--color-warning);">
+          <div class="card-header">
+            <span class="card-title">&#128722; ${escapeHtml(monthlyAdditions.month)}建议添加</span>
+            <span class="tag tag-warning">${monthlyAdditions.products.length}款</span>
+          </div>
+          <p style="font-size:0.8rem;color:var(--color-text-secondary);margin-bottom:8px;">${escapeHtml(monthlyAdditions.description)}</p>
+          ${monthlyAdditions.products.map(p => `
+            <div style="padding:8px 0;border-bottom:1px solid var(--color-border);">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-size:0.88rem;font-weight:500;color:var(--color-text);">${escapeHtml(p.name)}</span>
+                <span class="tag tag-${p.priority === '必买' ? 'warning' : p.priority === '强烈建议' ? 'caution' : 'normal'}">${p.priority}</span>
+              </div>
+              <div style="font-size:0.78rem;color:var(--color-text-secondary);margin-top:2px;">
+                ${escapeHtml(p.category)} - &yen;${p.price} - ${escapeHtml(p.urgency)}
+              </div>
+              <p style="font-size:0.78rem;color:var(--color-text-tertiary);margin-top:2px;">${escapeHtml(p.reason)}</p>
+            </div>
+          `).join('')}
+          <p style="font-size:0.78rem;color:var(--color-primary-dark);margin-top:6px;padding:6px 10px;background:var(--color-primary-alpha);border-radius:6px;">
+            &#128178; ${escapeHtml(monthlyAdditions.budget)}
+          </p>
+        </div>
+        ` : ''}
+
         ${products.length === 0 ? '<div class="empty-state">暂无产品记录<br>添加你的护肤品，建立产品审计档案</div>' :
           products.map(p => `
-            <div class="card record-card">
+            <div class="card record-card" ${p.isStrategy ? 'style="border-left:3px solid var(--color-info);"' : ''}>
               <div class="record-header">
                 <span class="record-title">${escapeHtml(p.name)}</span>
                 <span class="tag tag-${p.status === '在用' ? 'good' : p.status === '闲置' ? 'normal' : 'warning'}">${p.status || '在用'}</span>
               </div>
               <div class="record-tags">
                 <span class="tag tag-category">${escapeHtml(p.category || '未分类')}</span>
-                <span class="tag tag-category">${escapeHtml(p.brand || '')}</span>
-                ${p.price ? `<span class="tag tag-expense">¥${p.price}</span>` : ''}
+                ${p.brand ? `<span class="tag tag-category">${escapeHtml(p.brand)}</span>` : ''}
+                ${p.price ? `<span class="tag tag-expense">&yen;${p.price}</span>` : ''}
                 ${p.expiry ? `<span class="tag tag-date-small">到期 ${p.expiry}</span>` : ''}
+                ${p.isStrategy ? '<span class="tag tag-info">皮肤战略</span>' : ''}
               </div>
               ${p.notes ? `<p class="record-note">${escapeHtml(p.notes)}</p>` : ''}
+              <div class="record-actions">
+                <button class="btn-edit" data-id="${p.id}">&#9998;</button>
+                <button class="btn-delete" data-id="${p.id}">&#10007;</button>
+              </div>
             </div>
           `).join('')
         }
@@ -2033,7 +2374,7 @@ const App = (() => {
           { name: 'name', label: '产品名称', type: 'text', required: true, placeholder: '如：雅诗兰黛小棕瓶' },
           { name: 'brand', label: '品牌', type: 'text', placeholder: '品牌名' },
           { name: 'category', label: '类别', type: 'select',
-            options: ['洁面', '爽肤水', '精华', '乳液', '面霜', '防晒', '眼霜', '面膜', '去角质', '其他'] },
+            options: ['洁面', '爽肤水', '精华', '乳液', '面霜', '防晒', '眼霜', '面膜', '去角质', '水杨酸', '其他'] },
           { name: 'price', label: '价格(元)', type: 'number', placeholder: '0' },
           { name: 'status', label: '状态', type: 'select', options: ['在用', '闲置', '已用完', '过敏停用'] },
           { name: 'expiry', label: '保质期到期', type: 'date' },
@@ -2044,6 +2385,46 @@ const App = (() => {
           Toast.show('产品已添加', 'success');
           renderSkincareProducts();
         }
+      });
+    });
+
+    content.querySelectorAll('.btn-edit').forEach(el => {
+      el.addEventListener('click', () => {
+        const id = el.getAttribute('data-id');
+        const p = products.find(x => x.id === id);
+        if (!p) return;
+        Modal.openForm({
+          title: '编辑产品',
+          fields: [
+            { name: 'name', label: '产品名称', type: 'text', required: true, value: p.name || '' },
+            { name: 'brand', label: '品牌', type: 'text', value: p.brand || '' },
+            { name: 'category', label: '类别', type: 'select', value: p.category || '',
+              options: ['洁面', '爽肤水', '精华', '乳液', '面霜', '防晒', '眼霜', '面膜', '去角质', '水杨酸', '其他'] },
+            { name: 'price', label: '价格(元)', type: 'number', value: p.price || '' },
+            { name: 'status', label: '状态', type: 'select', value: p.status || '', options: ['在用', '闲置', '已用完', '过敏停用'] },
+            { name: 'expiry', label: '保质期到期', type: 'date', value: p.expiry || '' },
+            { name: 'notes', label: '使用感受', type: 'textarea', value: p.notes || '' }
+          ],
+          onConfirm: (data) => {
+            DataManager.updateRecord('skincareProducts', id, data);
+            Toast.show('已更新', 'success');
+            renderSkincareProducts();
+          }
+        });
+      });
+    });
+
+    content.querySelectorAll('.btn-delete').forEach(el => {
+      el.addEventListener('click', () => {
+        const id = el.getAttribute('data-id');
+        Modal.open({
+          title: '确认删除', content: '<p>确定要删除这个产品吗？</p>', type: 'danger',
+          onConfirm: () => {
+            DataManager.deleteRecord('skincareProducts', id);
+            Toast.show('已删除', 'info');
+            renderSkincareProducts();
+          }
+        });
       });
     });
   }
@@ -2225,6 +2606,92 @@ const App = (() => {
     const financeDiet = LinkageManager.getFinanceDietRecommendation();
     const skinCondition = todayRecords.length > 0 ? (todayRecords[0].skinCondition || '正常') : '正常';
 
+    // 今日茶饮推荐（按星期）
+    const today = new Date();
+    const dayOfWeek = today.getDay();
+    const teaList = (typeof ContentData !== 'undefined' && ContentData.teaRecommendations) ? ContentData.teaRecommendations : [];
+    const todayTea = teaList.find(t => t.day === dayOfWeek) || teaList[0];
+
+    // 自动测算热量函数
+    function autoCalcCalories(foodsText) {
+      if (!foodsText || typeof ContentData === 'undefined' || !ContentData.calorieDatabase) return 0;
+      const db = ContentData.calorieDatabase;
+      let total = 0;
+      // 匹配食物名称（支持逗号、顿号分隔）
+      const items = foodsText.split(/[,，、\s]+/).filter(Boolean);
+      items.forEach(item => {
+        // 尝试精确匹配和模糊匹配
+        let matched = false;
+        for (const [food, cal] of Object.entries(db)) {
+          if (item.includes(food) || food.includes(item)) {
+            total += cal;
+            matched = true;
+            break;
+          }
+        }
+        if (!matched) {
+          // 未匹配到的食物给一个默认估值
+          total += 100;
+        }
+      });
+      return total;
+    }
+
+    // 饮食评价
+    function getDietEvaluation() {
+      const meals = todayRecords.flatMap(r => r.meals || []);
+      if (meals.length === 0) return null;
+
+      const calDiff = todayCalories - calorieTarget;
+      const breakfast = meals.filter(m => m.time === '早餐');
+      const lunch = meals.filter(m => m.time === '午餐');
+      const dinner = meals.filter(m => m.time === '晚餐');
+      const snack = meals.filter(m => m.time === '加餐');
+
+      let evaluation = [];
+      let level = 'good';
+
+      // 热量评价
+      if (todayCalories > calorieTarget * 1.2) {
+        evaluation.push(`热量超标：今日摄入${todayCalories}千卡，超出目标${(calDiff)}千卡，建议减少晚餐主食量。`);
+        level = 'warning';
+      } else if (todayCalories < calorieTarget * 0.6 && todayCalories > 0) {
+        evaluation.push(`热量不足：今日仅摄入${todayCalories}千卡，术后恢复期需保证营养，建议加餐。`);
+        level = 'caution';
+      } else if (todayCalories > 0) {
+        evaluation.push(`热量达标：今日摄入${todayCalories}千卡，在目标范围内。`);
+      }
+
+      // 餐次评价
+      if (breakfast.length === 0) evaluation.push('缺少早餐：术后恢复期早餐很重要，建议吃温热食物。');
+      if (lunch.length === 0 && today.getHours() > 13) evaluation.push('缺少午餐：注意按时用餐。');
+      if (dinner.length === 0 && today.getHours() > 19) evaluation.push('缺少晚餐：可吃清淡粥品。');
+
+      // TCM评价
+      const allFoods = meals.map(m => m.foods || '').join('');
+      const coldFoods = ['西瓜', '冰', '冷饮', '生冷', '凉拌', '沙拉', '螃蟹', '绿豆'];
+      const foundCold = coldFoods.filter(f => allFoods.includes(f));
+      if (foundCold.length > 0) {
+        evaluation.push(`术后忌寒凉：检测到${foundCold.join('、')}，术后恢复期应避免寒凉食物，改吃温热性食物。`);
+        level = level === 'good' ? 'caution' : level;
+      }
+      const warmFoods = ['姜', '红枣', '红糖', '羊肉', '鸡肉', '小米', '山药'];
+      const foundWarm = warmFoods.filter(f => allFoods.includes(f));
+      if (foundWarm.length > 0) {
+        evaluation.push(`温补食材：检测到${foundWarm.join('、')}，符合术后温补原则。`);
+      }
+
+      // 水分评价
+      if (todayWater < waterGoal * 0.5 && today.getHours() > 15) {
+        evaluation.push(`饮水不足：今日仅${todayWater}杯，建议多喝温水。`);
+        if (level === 'good') level = 'caution';
+      }
+
+      return { evaluation, level, calDiff, mealCount: meals.length, hasBreakfast: breakfast.length > 0, hasLunch: lunch.length > 0, hasDinner: dinner.length > 0 };
+    }
+
+    const dietEval = getDietEvaluation();
+
     content.innerHTML = `
       <div class="page diet-page">
         <div class="page-header">
@@ -2248,6 +2715,45 @@ const App = (() => {
             <div class="stat-label">目标(千卡)</div>
           </div>
         </div>
+
+        <!-- 今日茶饮推荐 -->
+        ${todayTea ? `
+        <div class="card" style="border-left:4px solid var(--color-secondary-dark);background:rgba(201,189,161,0.06);">
+          <div class="card-header">
+            <span class="card-title">&#127793; 今日茶饮 - ${escapeHtml(todayTea.name)}</span>
+            <span class="tag tag-tea">${escapeHtml(todayTea.effect)}</span>
+          </div>
+          <div style="font-size:0.85rem;color:var(--color-text);margin-bottom:6px;">
+            <strong>配方：</strong>${escapeHtml(todayTea.ingredients)}
+          </div>
+          <div style="font-size:0.8rem;color:var(--color-text);margin-bottom:6px;">
+            <strong>适用：</strong>${escapeHtml(todayTea.suitable)}
+          </div>
+          <div style="font-size:0.78rem;color:var(--color-primary-dark);background:var(--color-primary-alpha);padding:8px 10px;border-radius:6px;line-height:1.7;">
+            &#128214; <strong>中医文化：</strong>${escapeHtml(todayTea.tcmCulture)}
+          </div>
+          <div style="font-size:0.76rem;color:var(--color-warning);margin-top:4px;">&#9888; ${escapeHtml(todayTea.avoid)}</div>
+        </div>
+        ` : ''}
+
+        <!-- 饮食评价 -->
+        ${dietEval ? `
+        <div class="card" style="border-left:4px solid var(--color-${dietEval.level === 'good' ? 'primary' : dietEval.level === 'caution' ? 'warning' : 'danger'});">
+          <div class="card-header">
+            <span class="card-title">&#129504; 今日饮食评价</span>
+            <span class="tag tag-${dietEval.level}">${dietEval.level === 'good' ? '达标' : dietEval.level === 'caution' ? '注意' : '超标'}</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px;">
+            <div style="text-align:center;padding:4px;background:${dietEval.hasBreakfast ? 'var(--color-primary-alpha)' : 'rgba(201,155,155,0.1)'};border-radius:4px;font-size:0.75rem;">早 ${dietEval.hasBreakfast ? '&#10003;' : '&#10007;'}</div>
+            <div style="text-align:center;padding:4px;background:${dietEval.hasLunch ? 'var(--color-primary-alpha)' : 'rgba(201,155,155,0.1)'};border-radius:4px;font-size:0.75rem;">午 ${dietEval.hasLunch ? '&#10003;' : '&#10007;'}</div>
+            <div style="text-align:center;padding:4px;background:${dietEval.hasDinner ? 'var(--color-primary-alpha)' : 'rgba(201,155,155,0.1)'};border-radius:4px;font-size:0.75rem;">晚 ${dietEval.hasDinner ? '&#10003;' : '&#10007;'}</div>
+            <div style="text-align:center;padding:4px;background:var(--color-border);border-radius:4px;font-size:0.75rem;">${dietEval.mealCount}餐</div>
+          </div>
+          <div style="font-size:0.8rem;color:var(--color-text);line-height:1.7;">
+            ${dietEval.evaluation.map(t => `<p style="padding:2px 0;">&#8226; ${t}</p>`).join('')}
+          </div>
+        </div>
+        ` : ''}
 
         <!-- 智能建议 -->
         <div class="card">
@@ -2294,28 +2800,33 @@ const App = (() => {
         fields: [
           { name: 'time', label: '用餐时间', type: 'select', required: true,
             options: ['早餐', '午餐', '晚餐', '加餐'] },
-          { name: 'foods', label: '食物内容', type: 'textarea', required: true, placeholder: '如：米饭、炒青菜、红烧肉' },
-          { name: 'calories', label: '热量估算(千卡)', type: 'number', placeholder: '500' },
+          { name: 'foods', label: '食物内容', type: 'textarea', required: true, placeholder: '如：米饭、炒青菜、红烧肉\n（系统自动测算热量）' },
+          { name: 'calories', label: '热量(千卡) - 留空自动测算', type: 'number', placeholder: '留空自动测算' },
           { name: 'waterCups', label: '今日饮水(杯)', type: 'number', placeholder: '8' }
         ],
         onConfirm: (data) => {
           const today = new Date().toISOString().slice(0, 10);
           const waterCups = parseInt(data.waterCups) || 0;
+          // 自动测算热量
+          let calories = parseInt(data.calories) || 0;
+          if (!calories && data.foods) {
+            calories = autoCalcCalories(data.foods);
+          }
           const todayRec = DataManager.getTodayRecords('dietRecords');
           if (todayRec.length > 0) {
             const existing = todayRec[0];
             existing.meals = existing.meals || [];
-            existing.meals.push({ time: data.time, foods: data.foods, calories: data.calories });
+            existing.meals.push({ time: data.time, foods: data.foods, calories: calories || '' });
             if (waterCups) existing.waterCups = waterCups;
             DataManager.updateRecord('dietRecords', existing.id, existing);
           } else {
             DataManager.addRecord('dietRecords', {
               date: today,
-              meals: [{ time: data.time, foods: data.foods, calories: data.calories }],
+              meals: [{ time: data.time, foods: data.foods, calories: calories || '' }],
               waterCups
             });
           }
-          Toast.show('饮食记录已保存', 'success');
+          Toast.show(calories ? `饮食记录已保存（测算${calories}千卡）` : '饮食记录已保存', 'success');
           renderDiet();
         }
       });
@@ -2330,6 +2841,20 @@ const App = (() => {
   function renderDietRecipes() {
     const content = document.getElementById('app-content');
     const recipes = DataManager.get('dietRecipes');
+    const db = (typeof ContentData !== 'undefined' && ContentData.recipeDatabase) ? ContentData.recipeDatabase : null;
+    const today = new Date();
+    const dayOfWeek = today.getDay();
+
+    // 每日推荐食谱（按星期轮换，保证每周不重复）
+    let dailyRecipes = [];
+    if (db) {
+      const breakfasts = db.recipes.filter(r => r.mealType === '早餐');
+      const lunches = db.recipes.filter(r => r.mealType === '午餐');
+      const dinners = db.recipes.filter(r => r.mealType === '晚餐');
+      const snacks = db.recipes.filter(r => r.mealType === '加餐');
+      const pick = (arr, offset) => arr[(dayOfWeek + offset) % arr.length];
+      dailyRecipes = [pick(breakfasts, 0), pick(lunches, 0), pick(dinners, 0), pick(snacks, 0)].filter(Boolean);
+    }
 
     content.innerHTML = `
       <div class="page">
@@ -2339,8 +2864,59 @@ const App = (() => {
           <button class="btn btn-primary btn-sm" id="btn-add-recipe">+ 食谱</button>
         </div>
 
-        ${recipes.length === 0 ? '<div class="empty-state">暂无食谱<br>添加你的常吃食谱，方便快速记录</div>' :
-          recipes.map(r => `
+        ${db ? `
+        <!-- 今日推荐食谱 -->
+        <div class="card" style="border-left:4px solid var(--color-primary);">
+          <div class="card-header">
+            <span class="card-title">&#127859; 今日推荐食谱</span>
+            <span class="tag tag-tea">${escapeHtml(db.recoveryFocus)}</span>
+          </div>
+          <p style="font-size:0.8rem;color:var(--color-text-secondary);margin-bottom:8px;">${escapeHtml(db.description)}</p>
+          ${dailyRecipes.map(r => `
+            <div style="padding:8px;margin-bottom:6px;background:var(--color-primary-alpha);border-radius:8px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-size:0.88rem;font-weight:600;color:var(--color-text);">${escapeHtml(r.name)}</span>
+                <span class="tag tag-cal">${r.calories}千卡</span>
+              </div>
+              <div style="font-size:0.78rem;color:var(--color-text-secondary);margin-top:2px;">
+                <span class="tag tag-category" style="margin-right:4px;">${escapeHtml(r.mealType)}</span>
+                &yen;${r.cost} - ${escapeHtml(r.suitability)}
+              </div>
+              <p style="font-size:0.78rem;color:var(--color-text-tertiary);margin-top:2px;">${escapeHtml(r.ingredients)}</p>
+              <p style="font-size:0.76rem;color:var(--color-primary-dark);margin-top:2px;">${escapeHtml(r.tcmNote)}</p>
+            </div>
+          `).join('')}
+        </div>
+        ` : ''}
+
+        <!-- 食谱库分类 -->
+        ${db ? `
+        <div style="font-size:0.9rem;font-weight:600;color:var(--color-text);margin:16px 0 8px;">&#128218; 完整食谱库</div>
+        ${['早餐', '午餐', '晚餐', '加餐'].map(mealType => {
+          const mealRecipes = db.recipes.filter(r => r.mealType === mealType);
+          if (mealRecipes.length === 0) return '';
+          return `
+            <div class="card">
+              <div class="card-header"><span class="card-title">${escapeHtml(mealType)} (${mealRecipes.length})</span></div>
+              ${mealRecipes.map(r => `
+                <div style="padding:6px 0;border-bottom:1px solid var(--color-border);">
+                  <div style="display:flex;justify-content:space-between;">
+                    <span style="font-size:0.85rem;color:var(--color-text);">${escapeHtml(r.name)}</span>
+                    <span class="tag tag-cal">${r.calories}千卡</span>
+                  </div>
+                  <div style="font-size:0.78rem;color:var(--color-text-tertiary);">${escapeHtml(r.ingredients)}</div>
+                  ${r.tcmNote ? `<div style="font-size:0.76rem;color:var(--color-primary-dark);">${escapeHtml(r.tcmNote)}</div>` : ''}
+                </div>
+              `).join('')}
+            </div>
+          `;
+        }).join('')}
+        ` : ''}
+
+        <!-- 用户自定义食谱 -->
+        ${recipes.length > 0 ? `
+        <div style="font-size:0.9rem;font-weight:600;color:var(--color-text);margin:16px 0 8px;">&#9998; 我的食谱</div>
+        ${recipes.map(r => `
             <div class="card record-card">
               <div class="record-header">
                 <span class="record-title">${escapeHtml(r.name)}</span>
@@ -2348,13 +2924,13 @@ const App = (() => {
               </div>
               <div class="record-tags">
                 <span class="tag tag-category">${escapeHtml(r.mealType || '')}</span>
-                <span class="tag tag-expense">¥${r.cost || 0}</span>
+                <span class="tag tag-expense">&yen;${r.cost || 0}</span>
               </div>
               ${r.ingredients ? `<p class="record-content">食材：${escapeHtml(r.ingredients)}</p>` : ''}
               ${r.notes ? `<p class="record-note">${escapeHtml(r.notes)}</p>` : ''}
             </div>
-          `).join('')
-        }
+          `).join('')}
+        ` : recipes.length === 0 && !db ? '<div class="empty-state">暂无食谱<br>添加你的常吃食谱，方便快速记录</div>' : ''}
       </div>
     `;
 
@@ -2579,6 +3155,152 @@ const App = (() => {
             </div>` : ''}
           </div>
         </div>
+
+        <!-- 本周财务总结 -->
+        ${(() => {
+          const todayD = new Date();
+          const dayOfWeek = todayD.getDay();
+          const monday = new Date(todayD);
+          monday.setDate(todayD.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+          monday.setHours(0, 0, 0, 0);
+          const sunday = new Date(monday);
+          sunday.setDate(monday.getDate() + 6);
+          sunday.setHours(23, 59, 59, 999);
+
+          const allRecords = DataManager.get('financeRecords');
+          const weekRecords = allRecords.filter(r => {
+            const d = new Date(r.date);
+            return d >= monday && d <= sunday;
+          });
+          const weekExpense = weekRecords.filter(r => r.type === 'expense').reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
+          const weekIncome = weekRecords.filter(r => r.type === 'income').reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
+          const weekNet = weekIncome - weekExpense;
+
+          // 按分类统计支出
+          const categoryStats = {};
+          weekRecords.filter(r => r.type === 'expense').forEach(r => {
+            const cat = r.category || '其他';
+            if (!categoryStats[cat]) categoryStats[cat] = 0;
+            categoryStats[cat] += parseFloat(r.amount) || 0;
+          });
+          const sortedCats = Object.entries(categoryStats).sort((a, b) => b[1] - a[1]);
+
+          // 上周对比
+          const lastMonday = new Date(monday);
+          lastMonday.setDate(monday.getDate() - 7);
+          const lastSunday = new Date(monday);
+          lastSunday.setDate(monday.getDate() - 1);
+          lastSunday.setHours(23, 59, 59, 999);
+          const lastWeekRecords = allRecords.filter(r => {
+            const d = new Date(r.date);
+            return d >= lastMonday && d <= lastSunday;
+          });
+          const lastWeekExpense = lastWeekRecords.filter(r => r.type === 'expense').reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
+          const expenseChange = lastWeekExpense > 0 ? Math.round((weekExpense - lastWeekExpense) / lastWeekExpense * 100) : 0;
+
+          // 每日支出趋势
+          const dailyExpenses = [];
+          for (let i = 0; i < 7; i++) {
+            const d = new Date(monday);
+            d.setDate(monday.getDate() + i);
+            const dStr = d.toISOString().slice(0, 10);
+            const dayExp = weekRecords.filter(r => r.type === 'expense' && r.date === dStr).reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
+            dailyExpenses.push(dayExp);
+          }
+          const maxDailyExp = Math.max(...dailyExpenses, 1);
+
+          const weekDays2 = ['一', '二', '三', '四', '五', '六', '日'];
+          const weekDateStr = `${monday.getMonth() + 1}/${monday.getDate()} - ${sunday.getMonth() + 1}/${sunday.getDate()}`;
+
+          // 评价
+          let evaluation = '';
+          let evalColor = 'var(--color-primary)';
+          const dailyBudget = DataManager.get('settings.dailyBudget') || 100;
+          const weekBudget = dailyBudget * 7;
+          if (weekExpense > weekBudget * 1.2) {
+            evaluation = '本周支出超预算20%以上，建议控制非必要消费';
+            evalColor = 'var(--color-danger)';
+          } else if (weekExpense > weekBudget) {
+            evaluation = '本周支出略超预算，注意控制节奏';
+            evalColor = 'var(--color-warning)';
+          } else if (weekNet >= 0) {
+            evaluation = '本周收支健康，有结余';
+            evalColor = 'var(--color-primary)';
+          } else {
+            evaluation = '本周入不敷出，建议减少开支';
+            evalColor = 'var(--color-warning)';
+          }
+
+          return `
+          <div class="card" style="border-left:4px solid ${evalColor};">
+            <div class="card-header">
+              <span class="card-title">&#128202; 本周财务总结</span>
+              <span class="tag tag-date-small">${weekDateStr}</span>
+            </div>
+
+            <div class="finance-summary">
+              <div class="finance-summary-item">
+                <span class="finance-label">本周支出</span>
+                <span class="finance-value amount-expense">-¥${weekExpense.toFixed(0)}</span>
+              </div>
+              <div class="finance-summary-item">
+                <span class="finance-label">本周收入</span>
+                <span class="finance-value amount-income">+¥${weekIncome.toFixed(0)}</span>
+              </div>
+              <div class="finance-summary-item">
+                <span class="finance-label">本周结余</span>
+                <span class="finance-value ${weekNet >= 0 ? 'amount-income' : 'amount-expense'}">${weekNet >= 0 ? '+' : ''}¥${weekNet.toFixed(0)}</span>
+              </div>
+            </div>
+
+            <!-- 每日支出柱状图 -->
+            <div style="margin-top:12px;">
+              <div style="font-size:0.78rem;color:var(--color-text-secondary);margin-bottom:6px;">每日支出</div>
+              <div style="display:flex;align-items:flex-end;gap:4px;height:60px;">
+                ${dailyExpenses.map((exp, i) => `
+                  <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;">
+                    <div style="font-size:0.6rem;color:var(--color-text-tertiary);">${exp > 0 ? '¥' + exp.toFixed(0) : ''}</div>
+                    <div style="width:100%;height:${Math.max(2, exp / maxDailyExp * 40)}px;background:${exp > dailyBudget ? 'var(--color-danger)' : 'var(--color-primary)'};border-radius:3px 3px 0 0;min-height:2px;"></div>
+                    <div style="font-size:0.6rem;color:var(--color-text-tertiary);">${weekDays2[i]}</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+
+            <!-- 分类支出 -->
+            ${sortedCats.length > 0 ? `
+            <div style="margin-top:12px;">
+              <div style="font-size:0.78rem;color:var(--color-text-secondary);margin-bottom:6px;">支出分类</div>
+              ${sortedCats.map(([cat, amt]) => {
+                const pct = weekExpense > 0 ? Math.round(amt / weekExpense * 100) : 0;
+                return `
+                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                    <span style="font-size:0.8rem;color:var(--color-text);min-width:50px;">${escapeHtml(cat)}</span>
+                    <div style="flex:1;height:8px;background:var(--color-border);border-radius:4px;overflow:hidden;">
+                      <div style="height:100%;width:${pct}%;background:var(--color-danger);border-radius:4px;"></div>
+                    </div>
+                    <span style="font-size:0.78rem;color:var(--color-text);min-width:60px;text-align:right;">¥${amt.toFixed(0)} (${pct}%)</span>
+                  </div>
+                `;
+              }).join('')}
+            </div>` : '<div style="font-size:0.8rem;color:var(--color-text-secondary);margin-top:8px;">本周暂无支出记录</div>'}
+
+            <!-- 上周对比 -->
+            ${lastWeekExpense > 0 ? `
+            <div style="margin-top:10px;padding:8px 10px;border-radius:6px;background:var(--color-border);font-size:0.78rem;color:var(--color-text-secondary);">
+              上周支出 ¥${lastWeekExpense.toFixed(0)} &rarr; 本周 ¥${weekExpense.toFixed(0)}
+              <span style="color:${expenseChange > 0 ? 'var(--color-danger)' : 'var(--color-primary)'};font-weight:600;">
+                ${expenseChange > 0 ? '&#9650;+' : '&#9660;'}${Math.abs(expenseChange)}%
+              </span>
+            </div>` : ''}
+
+            <!-- 评价 -->
+            <div style="margin-top:8px;padding:8px 10px;border-radius:6px;background:${evalColor}15;color:${evalColor};font-size:0.8rem;font-weight:500;">
+              &#128161; ${evaluation}
+            </div>
+          </div>
+          `;
+        })()}
 
         <!-- 快速入口 -->
         <div class="quick-links">
@@ -3529,7 +4251,272 @@ const App = (() => {
     });
   }
 
-  function renderPlanDaily() { renderPlanPage('dailyPlans', '日计划', '&#128197;'); }
+  function renderPlanDaily() {
+    const content = document.getElementById('app-content');
+    const plans = DataManager.get('dailyPlans');
+    const today = new Date();
+    const todayStr = today.toISOString().slice(0, 10);
+
+    // ========== 1. 今日学习任务（从7周计划自动生成） ==========
+    let todayStudyTask = null;
+    let studyWeek = 0, studyDayIdx = 0;
+    if (typeof ContentData !== 'undefined' && ContentData.researchPlan) {
+      const rp = ContentData.researchPlan;
+      const startDate = new Date('2026-07-27');
+      const daysDiff = Math.floor((today - startDate) / 86400000);
+      if (daysDiff >= 0) {
+        studyWeek = Math.floor(daysDiff / 7);
+        studyDayIdx = today.getDay() === 0 ? 6 : today.getDay() - 1;
+        if (studyWeek < rp.weeklySchedule.length) {
+          const week = rp.weeklySchedule[studyWeek];
+          if (studyDayIdx < week.days.length) {
+            todayStudyTask = week.days[studyDayIdx];
+          }
+        }
+      }
+    }
+
+    // 任务状态
+    const taskStatus = DataManager.get('studyTaskStatus') || {};
+    const studyTaskKey = `w${studyWeek + 1}-d${studyDayIdx}`;
+    const studyStatus = taskStatus[studyTaskKey];
+
+    // ========== 2. 年度计划拆分（从五年战略提取） ==========
+    let currentPhase = null;
+    let upcomingMilestones = [];
+    if (typeof ContentData !== 'undefined' && ContentData.fiveYearPlan) {
+      const fyp = ContentData.fiveYearPlan;
+      // 找到当前阶段
+      if (fyp.phases) {
+        currentPhase = fyp.phases.find(p => {
+          if (p.id === 0) return true; // Phase 0 always relevant during 7-week period
+          return true; // Show current phase
+        });
+      }
+      // 即将到来的里程碑（未来3个月内）
+      const threeMonthsLater = new Date(today);
+      threeMonthsLater.setMonth(threeMonthsLater.getMonth() + 3);
+      upcomingMilestones = (fyp.milestones || []).filter(m => {
+        const parts = m.date.split('.');
+        const mDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]) || 1);
+        return mDate >= today && mDate <= threeMonthsLater;
+      });
+    }
+
+    // ========== 3. 日计划分组（今日/其他） ==========
+    const todayPlans = plans.filter(p => p.date === todayStr || (!p.date && !p.done));
+    const otherPlans = plans.filter(p => p.date !== todayStr && p.date);
+
+    content.innerHTML = `
+      <div class="page plan-page">
+        <div class="page-header">
+          <button class="btn btn-outline btn-sm" onclick="Router.navigate('strategy')">&#8592; 返回</button>
+          <h2>&#128197; 日计划</h2>
+          <button class="btn btn-primary btn-sm" id="btn-add-plan">+ 添加</button>
+        </div>
+
+        <!-- 今日学习任务（自动） -->
+        ${todayStudyTask ? `
+        <div class="card" style="border-left:4px solid var(--color-info);">
+          <div class="card-header">
+            <span class="card-title">&#9998; 今日学习任务</span>
+            <span class="tag tag-study">第${studyWeek + 1}周 · Day${todayStudyTask.day}</span>
+          </div>
+          <div style="font-size:0.82rem;color:var(--color-text-tertiary);margin-bottom:4px;">${escapeHtml(todayStudyTask.date)}</div>
+          <div style="font-size:0.9rem;font-weight:600;color:var(--color-text);margin-bottom:4px;">${escapeHtml(todayStudyTask.topic)}</div>
+          <div style="font-size:0.8rem;color:var(--color-text-secondary);line-height:1.6;margin-bottom:6px;">${escapeHtml(todayStudyTask.content)}</div>
+          <div style="font-size:0.8rem;color:var(--color-primary-dark);background:var(--color-primary-alpha);padding:6px 10px;border-radius:6px;margin-bottom:6px;">
+            &#9989; 今日任务：${escapeHtml(todayStudyTask.task)}
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <button class="btn btn-sm ${studyStatus === 'done' ? 'btn-primary' : 'btn-outline'}" id="study-done-btn">${studyStatus === 'done' ? '&#10003; 已完成' : '标记完成'}</button>
+            ${studyStatus === 'done' ? '<span style="font-size:0.78rem;color:var(--color-primary);">&#10003; 今日学习已完成</span>' : ''}
+          </div>
+        </div>` : ''}
+
+        <!-- 年度计划拆分 -->
+        ${currentPhase ? `
+        <div class="card" style="border-left:4px solid var(--color-secondary-dark);">
+          <div class="card-header">
+            <span class="card-title">&#127942; 年度计划拆分</span>
+            <span class="tag tag-constitution">${escapeHtml(currentPhase.name.split('·')[0].trim())}</span>
+          </div>
+          <div style="font-size:0.8rem;color:var(--color-text-secondary);margin-bottom:6px;">${escapeHtml(currentPhase.period || '')} · ${escapeHtml(currentPhase.description || '')}</div>
+          ${(currentPhase.tasks || []).map(t => `
+            <div style="padding:6px 0;border-bottom:1px solid var(--color-border);">
+              <div style="font-size:0.85rem;color:var(--color-text);font-weight:500;">&#128204; ${escapeHtml(t.name)}</div>
+              <div style="font-size:0.78rem;color:var(--color-text-tertiary);margin-top:2px;">${escapeHtml(t.details)}</div>
+              <div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap;">
+                <span class="tag ${t.priority === '最高' ? 'tag-priority-high' : 'tag-priority-medium'}">${escapeHtml(t.priority)}</span>
+                <span class="tag tag-date-small">${escapeHtml(t.date)}</span>
+              </div>
+            </div>
+          `).join('')}
+        </div>` : ''}
+
+        <!-- 近期里程碑 -->
+        ${upcomingMilestones.length > 0 ? `
+        <div class="card" style="border-left:4px solid var(--color-danger);">
+          <div class="card-header">
+            <span class="card-title">&#9888; 近期里程碑（3个月内）</span>
+          </div>
+          ${upcomingMilestones.map(m => {
+            const parts = m.date.split('.');
+            const mDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]) || 1);
+            const daysLeft = Math.ceil((mDate - today) / 86400000);
+            return `
+              <div style="padding:6px 0;border-bottom:1px solid var(--color-border);">
+                <div style="font-size:0.85rem;color:var(--color-text);font-weight:500;">${escapeHtml(m.event)}</div>
+                <div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+                  <span class="tag ${m.type === '硬截止' || m.type === '最关键节点' ? 'tag-priority-high' : m.type === '硬节点' ? 'tag-priority-medium' : 'tag-priority-low'}">${escapeHtml(m.type)}</span>
+                  <span class="tag tag-date-small">${escapeHtml(m.date)}</span>
+                  <span style="font-size:0.78rem;color:${daysLeft <= 7 ? 'var(--color-danger)' : daysLeft <= 30 ? 'var(--color-warning)' : 'var(--color-text-secondary)'};font-weight:500;">
+                    ${daysLeft <= 0 ? '已到期' : `还剩${daysLeft}天`}
+                  </span>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>` : ''}
+
+        <!-- 今日待办 -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">&#128203; 今日待办（可修改）</span>
+            <span class="tag tag-info">${todayPlans.length}项</span>
+          </div>
+          ${todayPlans.length === 0 ? '<div class="empty-state-sm">暂无今日待办，点击添加</div>' :
+            todayPlans.map(p => `
+              <div class="card record-card plan-card" style="margin-bottom:8px;">
+                <div class="plan-check" data-id="${p.id}">${p.done ? '&#10003;' : '&#9744;'}</div>
+                <div class="plan-content">
+                  <span class="record-title ${p.done ? 'done' : ''}">${escapeHtml(p.title || '')}</span>
+                  ${p.desc ? `<p class="record-note">${escapeHtml(p.desc)}</p>` : ''}
+                  <div class="record-tags">
+                    ${p.priority ? `<span class="tag tag-priority-${p.priority}">${p.priority === 'high' ? '高' : p.priority === 'medium' ? '中' : '低'}</span>` : ''}
+                    ${p.date ? `<span class="tag tag-date-small">${p.date}</span>` : ''}
+                  </div>
+                </div>
+                <button class="btn-edit" data-id="${p.id}">&#9998;</button>
+                <button class="btn-delete" data-id="${p.id}">&#10007;</button>
+              </div>
+            `).join('')
+          }
+        </div>
+
+        <!-- 其他日期计划 -->
+        ${otherPlans.length > 0 ? `
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">&#128197; 其他日期计划</span>
+            <span class="tag tag-date-small">${otherPlans.length}项</span>
+          </div>
+          ${otherPlans.slice(-10).reverse().map(p => `
+            <div class="card record-card plan-card" style="margin-bottom:8px;">
+              <div class="plan-check" data-id="${p.id}">${p.done ? '&#10003;' : '&#9744;'}</div>
+              <div class="plan-content">
+                <span class="record-title ${p.done ? 'done' : ''}">${escapeHtml(p.title || '')}</span>
+                ${p.desc ? `<p class="record-note">${escapeHtml(p.desc)}</p>` : ''}
+                <div class="record-tags">
+                  ${p.priority ? `<span class="tag tag-priority-${p.priority}">${p.priority === 'high' ? '高' : p.priority === 'medium' ? '中' : '低'}</span>` : ''}
+                  ${p.date ? `<span class="tag tag-date-small">${p.date}</span>` : ''}
+                </div>
+              </div>
+              <button class="btn-edit" data-id="${p.id}">&#9998;</button>
+              <button class="btn-delete" data-id="${p.id}">&#10007;</button>
+            </div>
+          `).join('')}
+        </div>` : ''}
+      </div>
+    `;
+
+    // 添加计划按钮
+    document.getElementById('btn-add-plan').addEventListener('click', () => {
+      Modal.openForm({
+        title: '添加日计划',
+        fields: [
+          { name: 'title', label: '计划内容', type: 'text', required: true, placeholder: '要做什么...' },
+          { name: 'desc', label: '详细说明', type: 'textarea', placeholder: '补充描述（可选）' },
+          { name: 'priority', label: '优先级', type: 'select',
+            options: [{ value: 'high', label: '高' }, { value: 'medium', label: '中' }, { value: 'low', label: '低' }] },
+          { name: 'date', label: '日期', type: 'date', value: todayStr }
+        ],
+        onConfirm: (data) => {
+          data.done = false;
+          DataManager.addRecord('dailyPlans', data);
+          Toast.show('计划已添加', 'success');
+          renderPlanDaily();
+        }
+      });
+    });
+
+    // 学习任务完成按钮
+    const studyDoneBtn = document.getElementById('study-done-btn');
+    if (studyDoneBtn) {
+      studyDoneBtn.addEventListener('click', () => {
+        let ts = DataManager.get('studyTaskStatus') || {};
+        if (ts[studyTaskKey] === 'done') {
+          delete ts[studyTaskKey];
+        } else {
+          ts[studyTaskKey] = 'done';
+        }
+        DataManager.set('studyTaskStatus', ts);
+        Toast.show(ts[studyTaskKey] === 'done' ? '今日学习已完成' : '已取消完成', 'success');
+        renderPlanDaily();
+      });
+    }
+
+    // 勾选完成
+    content.querySelectorAll('.plan-check').forEach(el => {
+      el.addEventListener('click', () => {
+        const id = el.getAttribute('data-id');
+        const plan = plans.find(p => p.id === id);
+        if (plan) {
+          DataManager.updateRecord('dailyPlans', id, { done: !plan.done });
+          renderPlanDaily();
+        }
+      });
+    });
+
+    // 编辑
+    content.querySelectorAll('.btn-edit').forEach(el => {
+      el.addEventListener('click', () => {
+        const id = el.getAttribute('data-id');
+        const plan = plans.find(p => p.id === id);
+        if (!plan) return;
+        Modal.openForm({
+          title: '编辑日计划',
+          fields: [
+            { name: 'title', label: '计划内容', type: 'text', required: true, value: plan.title || '' },
+            { name: 'desc', label: '详细说明', type: 'textarea', value: plan.desc || '' },
+            { name: 'priority', label: '优先级', type: 'select', value: plan.priority || '',
+              options: [{ value: 'high', label: '高' }, { value: 'medium', label: '中' }, { value: 'low', label: '低' }] },
+            { name: 'date', label: '日期', type: 'date', value: plan.date || '' }
+          ],
+          onConfirm: (data) => {
+            DataManager.updateRecord('dailyPlans', id, data);
+            Toast.show('已更新', 'success');
+            renderPlanDaily();
+          }
+        });
+      });
+    });
+
+    // 删除
+    content.querySelectorAll('.btn-delete').forEach(el => {
+      el.addEventListener('click', () => {
+        const id = el.getAttribute('data-id');
+        Modal.open({
+          title: '确认删除', content: '<p>确定要删除这条计划吗？</p>', type: 'danger',
+          onConfirm: () => {
+            DataManager.deleteRecord('dailyPlans', id);
+            Toast.show('已删除', 'info');
+            renderPlanDaily();
+          }
+        });
+      });
+    });
+  }
   function renderPlanWeekly() { renderPlanPage('weeklyPlans', '周计划', '&#128198;'); }
   function renderPlanMonthly() { renderPlanPage('monthlyPlans', '月计划', '&#128203;'); }
   function renderPlanYearly() { renderPlanPage('yearlyPlans', '年计划', '&#127942;'); }
@@ -4162,10 +5149,68 @@ const App = (() => {
     const daysDiff = Math.floor((today - startDate) / 86400000);
     const currentWeek = Math.floor(daysDiff / 7) + 1;
     const totalWeeks = rp.weeklySchedule.length;
-
-    // 当前年月
     const currentYear = today.getFullYear();
     const currentMonth = today.getMonth() + 1;
+    const dayOfWeek = today.getDay();
+    const todayDayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+
+    // 加载任务状态
+    let taskStatus = DataManager.get('studyTaskStatus') || {};
+
+    // 统计
+    let doneCount = 0, makeupCount = 0, skipCount = 0, pendingCount = 0;
+    rp.weeklySchedule.forEach(week => {
+      week.days.forEach((d, i) => {
+        const key = `w${week.week}-d${i}`;
+        const status = taskStatus[key];
+        if (status === 'done') doneCount++;
+        else if (status === 'makeup') makeupCount++;
+        else if (status === 'skip') skipCount++;
+        else pendingCount++;
+      });
+    });
+    const totalTasks = doneCount + makeupCount + skipCount + pendingCount;
+    const completedPercent = totalTasks > 0 ? Math.round((doneCount + makeupCount) / totalTasks * 100) : 0;
+
+    // 生成所有周的卡片
+    const weekCards = rp.weeklySchedule.map((week, wi) => {
+      const isCurrentWeek = (wi + 1) === currentWeek;
+      const dayItems = week.days.map((d, di) => {
+        const key = `w${week.week}-d${di}`;
+        const status = taskStatus[key];
+        const isToday = isCurrentWeek && di === todayDayIndex;
+        let statusBadge = '';
+        if (status === 'done') statusBadge = '<span class="tag tag-good" style="margin-left:4px;">&#10003;完成</span>';
+        else if (status === 'makeup') statusBadge = `<span class="tag tag-caution" style="margin-left:4px;">&#8635;补办 ${escapeHtml(taskStatus[key + '-date'] || '')}</span>`;
+        else if (status === 'skip') statusBadge = '<span class="tag tag-normal" style="margin-left:4px;">&#8856;跳过</span>';
+        return `
+          <div class="study-task-item ${status === 'done' ? 'task-done' : ''}" style="padding:8px;border-bottom:1px solid var(--color-border);${isToday ? 'background:var(--color-primary-alpha);border-radius:6px;' : ''}">
+            <div style="font-size:0.78rem;color:${isToday ? 'var(--color-primary-dark)' : 'var(--color-text-tertiary)'};font-weight:${isToday ? '600' : '400'};">
+              ${escapeHtml(d.date)}${isToday ? ' <-今天' : ''} ${statusBadge}
+            </div>
+            <div style="font-size:0.85rem;color:var(--color-text);margin-top:2px;">${escapeHtml(d.topic)}</div>
+            <div style="font-size:0.76rem;color:var(--color-text-tertiary);margin-top:2px;">${escapeHtml(d.content.slice(0, 80))}${d.content.length > 80 ? '...' : ''}</div>
+            <div style="font-size:0.78rem;color:var(--color-primary-dark);margin-top:4px;background:var(--color-primary-alpha);padding:4px 8px;border-radius:4px;">&#9989; ${escapeHtml(d.task)}</div>
+            <div style="display:flex;gap:6px;margin-top:6px;">
+              <button class="btn btn-sm ${status === 'done' ? 'btn-primary' : 'btn-outline'} btn-task-done" data-key="${key}">完成</button>
+              <button class="btn btn-sm ${status === 'makeup' ? 'btn-primary' : 'btn-outline'} btn-task-makeup" data-key="${key}">补办</button>
+              <button class="btn btn-sm ${status === 'skip' ? 'btn-primary' : 'btn-outline'} btn-task-skip" data-key="${key}">跳过</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+      return `
+        <div class="card" style="${isCurrentWeek ? 'border-left:4px solid var(--color-primary);' : ''}">
+          <div class="card-header" style="cursor:pointer;" data-week-toggle="${wi}">
+            <span class="card-title">&#128218; 第${week.week}周 - ${escapeHtml(week.title)}</span>
+            <span class="tag tag-info">${week.date}${isCurrentWeek ? ' · 当前' : ''}</span>
+          </div>
+          <div class="week-tasks" data-week-tasks="${wi}" style="${isCurrentWeek ? '' : 'display:none;'}">
+            ${dayItems}
+          </div>
+        </div>
+      `;
+    }).join('');
 
     content.innerHTML = `
       <div class="page">
@@ -4175,16 +5220,22 @@ const App = (() => {
         </div>
 
         <p style="font-size:0.82rem;color:var(--color-text-secondary);margin-bottom:12px;">
-          ${rp.title} · 第${currentWeek}/${totalWeeks}周 · ${rp.period}
+          ${rp.title} - 第${currentWeek}/${totalWeeks}周 - ${rp.period}
         </p>
 
-        <!-- 整体进度条 -->
+        <!-- 整体进度条 + 统计 -->
         <div class="card">
           <div class="card-header"><span class="card-title">&#128202; 整体进度</span></div>
           <div class="progress-bar" style="height:12px;background:var(--color-border);border-radius:6px;overflow:hidden;">
-            <div style="height:100%;width:${Math.min(100, (currentWeek / totalWeeks * 100)).toFixed(0)}%;background:var(--color-primary);border-radius:6px;transition:width 0.3s;"></div>
+            <div style="height:100%;width:${completedPercent}%;background:var(--color-primary);border-radius:6px;transition:width 0.3s;"></div>
           </div>
-          <p style="font-size:0.8rem;color:var(--color-text-secondary);margin-top:6px;">${(currentWeek / totalWeeks * 100).toFixed(0)}% · 已完成${Math.max(0, daysDiff)}天</p>
+          <div style="display:flex;gap:12px;margin-top:8px;font-size:0.78rem;flex-wrap:wrap;">
+            <span style="color:var(--color-primary-dark);">&#10003; 完成 ${doneCount}</span>
+            <span style="color:var(--color-warning);">&#8635; 补办 ${makeupCount}</span>
+            <span style="color:var(--color-text-secondary);">&#8856; 跳过 ${skipCount}</span>
+            <span style="color:var(--color-text-tertiary);">&#9675; 待完成 ${pendingCount}</span>
+          </div>
+          <p style="font-size:0.8rem;color:var(--color-text-secondary);margin-top:6px;">完成率 ${completedPercent}%</p>
         </div>
 
         <!-- 年度目标 -->
@@ -4219,64 +5270,94 @@ const App = (() => {
           })()}
         </div>
 
-        <!-- 本周任务（自动匹配） -->
-        ${(() => {
-          if (currentWeek < 1 || currentWeek > totalWeeks) return '<div class="card"><div class="empty-state">不在学习计划周期内</div></div>';
-          const week = rp.weeklySchedule[currentWeek - 1];
-          const dayOfWeek = today.getDay();
-          const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-          return `
-          <div class="card" style="border-left:4px solid var(--color-primary);">
-            <div class="card-header">
-              <span class="card-title">&#128198; 第${currentWeek}周 · ${escapeHtml(week.title)}</span>
-              <span class="tag tag-info">${week.date}</span>
-            </div>
-            ${week.days.map((d, i) => `
-              <div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--color-border);${i === dayIndex ? 'background:var(--color-primary-alpha);border-radius:6px;padding:6px 8px;margin:2px -8px;' : ''}">
-                <span style="min-width:90px;font-size:0.78rem;color:${i === dayIndex ? 'var(--color-primary-dark)' : 'var(--color-text-tertiary)'};font-weight:${i === dayIndex ? '600' : '400'};">${escapeHtml(d.date)}${i === dayIndex ? ' ←今天' : ''}</span>
-                <div style="flex:1;">
-                  <div style="font-size:0.82rem;color:var(--color-text);font-weight:${i === dayIndex ? '600' : '400'};">${escapeHtml(d.topic)}</div>
-                  <div style="font-size:0.76rem;color:var(--color-text-tertiary);">${escapeHtml(d.content.slice(0, 60))}${d.content.length > 60 ? '...' : ''}</div>
-                </div>
-              </div>
-            `).join('')}
-          </div>`;
-        })()}
-
         <!-- 今日具体任务 -->
         ${(() => {
           if (currentWeek < 1 || currentWeek > totalWeeks) return '';
           const week = rp.weeklySchedule[currentWeek - 1];
-          const dayOfWeek = today.getDay();
-          const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-          if (!week.days[dayIndex]) return '';
-          const d = week.days[dayIndex];
+          if (!week.days[todayDayIndex]) return '';
+          const d = week.days[todayDayIndex];
+          const key = `w${week.week}-d${todayDayIndex}`;
+          const status = taskStatus[key];
           return `
           <div class="card" style="border-left:4px solid var(--color-warning);">
-            <div class="card-header"><span class="card-title">&#128197; 今日任务 · ${escapeHtml(d.date)}</span></div>
+            <div class="card-header"><span class="card-title">&#128197; 今日任务 - ${escapeHtml(d.date)}</span></div>
             <h3 style="font-size:0.95rem;color:var(--color-text);margin-bottom:6px;">${escapeHtml(d.topic)}</h3>
             <p style="font-size:0.82rem;color:var(--color-text-secondary);margin-bottom:8px;">${escapeHtml(d.content)}</p>
             <div style="background:var(--color-primary-alpha);border-radius:8px;padding:10px;">
               <p style="font-size:0.85rem;color:var(--color-primary-dark);">&#9989; <strong>任务：</strong>${escapeHtml(d.task)}</p>
             </div>
-            <button class="btn btn-primary btn-sm btn-block" style="margin-top:8px;" id="btn-add-study-task">加入今日待办</button>
+            <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
+              <button class="btn ${status === 'done' ? 'btn-primary' : 'btn-outline'} btn-sm btn-today-done">完成</button>
+              <button class="btn ${status === 'makeup' ? 'btn-primary' : 'btn-outline'} btn-sm btn-today-makeup">补办</button>
+              <button class="btn ${status === 'skip' ? 'btn-primary' : 'btn-outline'} btn-sm btn-today-skip">跳过</button>
+              <button class="btn btn-primary btn-sm" style="margin-left:auto;" id="btn-add-study-task">加入待办</button>
+            </div>
           </div>`;
         })()}
+
+        <!-- 全部7周任务列表 -->
+        <div style="font-size:0.9rem;font-weight:600;color:var(--color-text);margin:16px 0 8px;">&#128218; 7周完整任务（点击展开/收起）</div>
+        ${weekCards}
       </div>
     `;
+
+    // 任务状态操作
+    function setTaskStatus(key, status) {
+      let ts = DataManager.get('studyTaskStatus') || {};
+      if (status === 'makeup' && ts[key] !== 'makeup') {
+        Modal.openForm({
+          title: '补办日期',
+          fields: [{ name: 'date', label: '补办日期', type: 'date', required: true, value: todayStr }],
+          onConfirm: (data) => {
+            ts[key] = 'makeup';
+            ts[key + '-date'] = data.date;
+            DataManager.set('studyTaskStatus', ts);
+            Toast.show('已标记为补办', 'success');
+            renderStudyBreakdown();
+          }
+        });
+      } else {
+        if (ts[key] === status) { delete ts[key]; delete ts[key + '-date']; }
+        else { ts[key] = status; if (status !== 'makeup') delete ts[key + '-date']; }
+        DataManager.set('studyTaskStatus', ts);
+        renderStudyBreakdown();
+      }
+    }
+
+    content.querySelectorAll('.btn-task-done').forEach(btn => {
+      btn.addEventListener('click', () => setTaskStatus(btn.getAttribute('data-key'), 'done'));
+    });
+    content.querySelectorAll('.btn-task-makeup').forEach(btn => {
+      btn.addEventListener('click', () => setTaskStatus(btn.getAttribute('data-key'), 'makeup'));
+    });
+    content.querySelectorAll('.btn-task-skip').forEach(btn => {
+      btn.addEventListener('click', () => setTaskStatus(btn.getAttribute('data-key'), 'skip'));
+    });
+
+    // 今日任务按钮
+    if (currentWeek >= 1 && currentWeek <= totalWeeks) {
+      const week = rp.weeklySchedule[currentWeek - 1];
+      const key = `w${week.week}-d${todayDayIndex}`;
+      document.querySelector('.btn-today-done')?.addEventListener('click', () => setTaskStatus(key, 'done'));
+      document.querySelector('.btn-today-makeup')?.addEventListener('click', () => setTaskStatus(key, 'makeup'));
+      document.querySelector('.btn-today-skip')?.addEventListener('click', () => setTaskStatus(key, 'skip'));
+    }
+
+    // 周展开/收起
+    content.querySelectorAll('[data-week-toggle]').forEach(el => {
+      el.addEventListener('click', () => {
+        const wi = el.getAttribute('data-week-toggle');
+        const tasks = content.querySelector(`[data-week-tasks="${wi}"]`);
+        if (tasks) tasks.style.display = tasks.style.display === 'none' ? 'block' : 'none';
+      });
+    });
 
     document.getElementById('btn-add-study-task')?.addEventListener('click', () => {
       if (currentWeek < 1 || currentWeek > totalWeeks) return;
       const week = rp.weeklySchedule[currentWeek - 1];
-      const dayOfWeek = today.getDay();
-      const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-      const d = week.days[dayIndex];
+      const d = week.days[todayDayIndex];
       DataManager.addRecord('dailyPlans', {
-        title: d.topic,
-        desc: d.task,
-        priority: 'high',
-        date: todayStr,
-        done: false
+        title: d.topic, desc: d.task, priority: 'high', date: todayStr, done: false
       });
       Toast.show('已加入今日待办', 'success');
     });
