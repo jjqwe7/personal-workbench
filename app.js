@@ -4324,15 +4324,49 @@ const App = (() => {
           </div>
           <div style="font-size:0.82rem;color:var(--color-text-tertiary);margin-bottom:4px;">${escapeHtml(todayStudyTask.date)}</div>
           <div style="font-size:0.9rem;font-weight:600;color:var(--color-text);margin-bottom:4px;">${escapeHtml(todayStudyTask.topic)}</div>
+          ${todayStudyTask.goal ? `<div style="font-size:0.8rem;color:var(--color-info);margin-bottom:4px;">&#127919; <strong>目标：</strong>${escapeHtml(todayStudyTask.goal)}</div>` : ''}
           <div style="font-size:0.8rem;color:var(--color-text-secondary);line-height:1.6;margin-bottom:6px;">${escapeHtml(todayStudyTask.content)}</div>
           <div style="font-size:0.8rem;color:var(--color-primary-dark);background:var(--color-primary-alpha);padding:6px 10px;border-radius:6px;margin-bottom:6px;">
             &#9989; 今日任务：${escapeHtml(todayStudyTask.task)}
           </div>
-          <div style="display:flex;gap:6px;align-items:center;">
-            <button class="btn btn-sm ${studyStatus === 'done' ? 'btn-primary' : 'btn-outline'}" id="study-done-btn">${studyStatus === 'done' ? '&#10003; 已完成' : '标记完成'}</button>
-            ${studyStatus === 'done' ? '<span style="font-size:0.78rem;color:var(--color-primary);">&#10003; 今日学习已完成</span>' : ''}
+          ${todayStudyTask.materials ? `<div style="font-size:0.76rem;color:var(--color-text-secondary);margin-bottom:4px;padding:4px 8px;background:var(--color-border);border-radius:4px;">&#128218; <strong>资料：</strong>${escapeHtml(todayStudyTask.materials)}</div>` : ''}
+          ${todayStudyTask.selfTest ? `<div style="font-size:0.76rem;color:var(--color-warning);margin-bottom:6px;padding:4px 8px;background:rgba(201,155,155,0.08);border-radius:4px;">&#9999; <strong>自测：</strong>${escapeHtml(todayStudyTask.selfTest)}</div>` : ''}
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            <button class="btn btn-sm ${studyStatus === 'done' ? 'btn-primary' : 'btn-outline'}" id="study-done-btn">完成</button>
+            <button class="btn btn-sm ${studyStatus === 'makeup' ? 'btn-primary' : 'btn-outline'}" id="study-makeup-btn">补</button>
+            <button class="btn btn-sm ${studyStatus === 'postpone' ? 'btn-primary' : 'btn-outline'}" id="study-postpone-btn">延后</button>
+            ${studyStatus === 'done' ? '<span style="font-size:0.78rem;color:var(--color-primary);">&#10003; 已完成</span>' : ''}
+            ${studyStatus === 'makeup' ? '<span style="font-size:0.78rem;color:var(--color-warning);">&#8635; 补做 ' + escapeHtml(taskStatus[studyTaskKey + '-date'] || '') + '</span>' : ''}
+            ${studyStatus === 'postpone' ? '<span style="font-size:0.78rem;color:var(--color-text-secondary);">&#8594; 已延后至明天</span>' : ''}
           </div>
         </div>` : ''}
+
+        <!-- 延后到今日的任务 -->
+        ${(() => {
+          const postponedTasks = plans.filter(p => p.isPostponedStudy && p.date === todayStr && !p.done);
+          if (postponedTasks.length === 0) return '';
+          return `
+          <div class="card" style="border-left:4px solid var(--color-warning);">
+            <div class="card-header">
+              <span class="card-title">&#8594; 延后到今日的任务</span>
+              <span class="tag tag-caution">${postponedTasks.length}项</span>
+            </div>
+            ${postponedTasks.map(p => `
+              <div class="card record-card plan-card" style="margin-bottom:8px;border:1px dashed var(--color-warning);">
+                <div class="plan-check" data-id="${p.id}">${p.done ? '&#10003;' : '&#9744;'}</div>
+                <div class="plan-content">
+                  <span class="record-title">${escapeHtml(p.title || '')}</span>
+                  ${p.desc ? `<p class="record-note">${escapeHtml(p.desc)}</p>` : ''}
+                  <div class="record-tags">
+                    <span class="tag tag-priority-high">延后任务</span>
+                  </div>
+                </div>
+                <button class="btn-edit" data-id="${p.id}">&#9998;</button>
+                <button class="btn-delete" data-id="${p.id}">&#10007;</button>
+              </div>
+            `).join('')}
+          </div>`;
+        })()}
 
         <!-- 年度计划拆分 -->
         ${currentPhase ? `
@@ -4450,7 +4484,7 @@ const App = (() => {
       });
     });
 
-    // 学习任务完成按钮
+    // 学习任务状态按钮
     const studyDoneBtn = document.getElementById('study-done-btn');
     if (studyDoneBtn) {
       studyDoneBtn.addEventListener('click', () => {
@@ -4463,6 +4497,70 @@ const App = (() => {
         DataManager.set('studyTaskStatus', ts);
         Toast.show(ts[studyTaskKey] === 'done' ? '今日学习已完成' : '已取消完成', 'success');
         renderPlanDaily();
+      });
+    }
+
+    const studyMakeupBtn = document.getElementById('study-makeup-btn');
+    if (studyMakeupBtn) {
+      studyMakeupBtn.addEventListener('click', () => {
+        let ts = DataManager.get('studyTaskStatus') || {};
+        if (ts[studyTaskKey] === 'makeup') {
+          delete ts[studyTaskKey];
+          delete ts[studyTaskKey + '-date'];
+          DataManager.set('studyTaskStatus', ts);
+          Toast.show('已取消补做', 'info');
+          renderPlanDaily();
+        } else {
+          Modal.openForm({
+            title: '补做日期',
+            fields: [{ name: 'date', label: '补做日期', type: 'date', required: true, value: todayStr }],
+            onConfirm: (data) => {
+              ts[studyTaskKey] = 'makeup';
+              ts[studyTaskKey + '-date'] = data.date;
+              DataManager.set('studyTaskStatus', ts);
+              Toast.show('已标记为补做', 'success');
+              renderPlanDaily();
+            }
+          });
+        }
+      });
+    }
+
+    const studyPostponeBtn = document.getElementById('study-postpone-btn');
+    if (studyPostponeBtn) {
+      studyPostponeBtn.addEventListener('click', () => {
+        let ts = DataManager.get('studyTaskStatus') || {};
+        if (ts[studyTaskKey] === 'postpone') {
+          delete ts[studyTaskKey];
+          delete ts[studyTaskKey + '-date'];
+          DataManager.set('studyTaskStatus', ts);
+          Toast.show('已取消延后', 'info');
+          renderPlanDaily();
+        } else {
+          // 计算明天日期
+          const tomorrow = new Date();
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          const tomorrowStr = tomorrow.toISOString().slice(0, 10);
+          
+          // 加入明日日计划
+          if (todayStudyTask) {
+            DataManager.addRecord('dailyPlans', {
+              title: `[延后] ${todayStudyTask.topic}`,
+              desc: todayStudyTask.task,
+              priority: 'high',
+              date: tomorrowStr,
+              done: false,
+              isPostponedStudy: true,
+              originalKey: studyTaskKey
+            });
+          }
+          
+          ts[studyTaskKey] = 'postpone';
+          ts[studyTaskKey + '-date'] = tomorrowStr;
+          DataManager.set('studyTaskStatus', ts);
+          Toast.show(`已延后到明天（${tomorrowStr}）`, 'success');
+          renderPlanDaily();
+        }
       });
     }
 
@@ -5158,18 +5256,18 @@ const App = (() => {
     let taskStatus = DataManager.get('studyTaskStatus') || {};
 
     // 统计
-    let doneCount = 0, makeupCount = 0, skipCount = 0, pendingCount = 0;
+    let doneCount = 0, makeupCount = 0, postponeCount = 0, pendingCount = 0;
     rp.weeklySchedule.forEach(week => {
       week.days.forEach((d, i) => {
         const key = `w${week.week}-d${i}`;
         const status = taskStatus[key];
         if (status === 'done') doneCount++;
         else if (status === 'makeup') makeupCount++;
-        else if (status === 'skip') skipCount++;
+        else if (status === 'postpone') postponeCount++;
         else pendingCount++;
       });
     });
-    const totalTasks = doneCount + makeupCount + skipCount + pendingCount;
+    const totalTasks = doneCount + makeupCount + postponeCount + pendingCount;
     const completedPercent = totalTasks > 0 ? Math.round((doneCount + makeupCount) / totalTasks * 100) : 0;
 
     // 生成所有周的卡片
@@ -5181,20 +5279,23 @@ const App = (() => {
         const isToday = isCurrentWeek && di === todayDayIndex;
         let statusBadge = '';
         if (status === 'done') statusBadge = '<span class="tag tag-good" style="margin-left:4px;">&#10003;完成</span>';
-        else if (status === 'makeup') statusBadge = `<span class="tag tag-caution" style="margin-left:4px;">&#8635;补办 ${escapeHtml(taskStatus[key + '-date'] || '')}</span>`;
-        else if (status === 'skip') statusBadge = '<span class="tag tag-normal" style="margin-left:4px;">&#8856;跳过</span>';
+        else if (status === 'makeup') statusBadge = `<span class="tag tag-caution" style="margin-left:4px;">&#8635;补 ${escapeHtml(taskStatus[key + '-date'] || '')}</span>`;
+        else if (status === 'postpone') statusBadge = '<span class="tag tag-normal" style="margin-left:4px;">&#8594;延后</span>';
         return `
           <div class="study-task-item ${status === 'done' ? 'task-done' : ''}" style="padding:8px;border-bottom:1px solid var(--color-border);${isToday ? 'background:var(--color-primary-alpha);border-radius:6px;' : ''}">
             <div style="font-size:0.78rem;color:${isToday ? 'var(--color-primary-dark)' : 'var(--color-text-tertiary)'};font-weight:${isToday ? '600' : '400'};">
               ${escapeHtml(d.date)}${isToday ? ' <-今天' : ''} ${statusBadge}
             </div>
             <div style="font-size:0.85rem;color:var(--color-text);margin-top:2px;">${escapeHtml(d.topic)}</div>
+            ${d.goal ? `<div style="font-size:0.76rem;color:var(--color-info);margin-top:2px;">&#127919; ${escapeHtml(d.goal)}</div>` : ''}
             <div style="font-size:0.76rem;color:var(--color-text-tertiary);margin-top:2px;">${escapeHtml(d.content.slice(0, 80))}${d.content.length > 80 ? '...' : ''}</div>
             <div style="font-size:0.78rem;color:var(--color-primary-dark);margin-top:4px;background:var(--color-primary-alpha);padding:4px 8px;border-radius:4px;">&#9989; ${escapeHtml(d.task)}</div>
+            ${d.materials ? `<div style="font-size:0.72rem;color:var(--color-text-secondary);margin-top:3px;">&#128218; <strong>资料：</strong>${escapeHtml(d.materials)}</div>` : ''}
+            ${d.selfTest ? `<div style="font-size:0.72rem;color:var(--color-warning);margin-top:2px;">&#9999; <strong>自测：</strong>${escapeHtml(d.selfTest)}</div>` : ''}
             <div style="display:flex;gap:6px;margin-top:6px;">
               <button class="btn btn-sm ${status === 'done' ? 'btn-primary' : 'btn-outline'} btn-task-done" data-key="${key}">完成</button>
-              <button class="btn btn-sm ${status === 'makeup' ? 'btn-primary' : 'btn-outline'} btn-task-makeup" data-key="${key}">补办</button>
-              <button class="btn btn-sm ${status === 'skip' ? 'btn-primary' : 'btn-outline'} btn-task-skip" data-key="${key}">跳过</button>
+              <button class="btn btn-sm ${status === 'makeup' ? 'btn-primary' : 'btn-outline'} btn-task-makeup" data-key="${key}">补</button>
+              <button class="btn btn-sm ${status === 'postpone' ? 'btn-primary' : 'btn-outline'} btn-task-postpone" data-key="${key}">延后</button>
             </div>
           </div>
         `;
@@ -5231,8 +5332,8 @@ const App = (() => {
           </div>
           <div style="display:flex;gap:12px;margin-top:8px;font-size:0.78rem;flex-wrap:wrap;">
             <span style="color:var(--color-primary-dark);">&#10003; 完成 ${doneCount}</span>
-            <span style="color:var(--color-warning);">&#8635; 补办 ${makeupCount}</span>
-            <span style="color:var(--color-text-secondary);">&#8856; 跳过 ${skipCount}</span>
+            <span style="color:var(--color-warning);">&#8635; 补 ${makeupCount}</span>
+            <span style="color:var(--color-text-secondary);">&#8594; 延后 ${postponeCount}</span>
             <span style="color:var(--color-text-tertiary);">&#9675; 待完成 ${pendingCount}</span>
           </div>
           <p style="font-size:0.8rem;color:var(--color-text-secondary);margin-top:6px;">完成率 ${completedPercent}%</p>
@@ -5281,15 +5382,18 @@ const App = (() => {
           return `
           <div class="card" style="border-left:4px solid var(--color-warning);">
             <div class="card-header"><span class="card-title">&#128197; 今日任务 - ${escapeHtml(d.date)}</span></div>
-            <h3 style="font-size:0.95rem;color:var(--color-text);margin-bottom:6px;">${escapeHtml(d.topic)}</h3>
+            <h3 style="font-size:0.95rem;color:var(--color-text);margin-bottom:4px;">${escapeHtml(d.topic)}</h3>
+            ${d.goal ? `<div style="font-size:0.82rem;color:var(--color-info);margin-bottom:6px;">&#127919; <strong>今日目标：</strong>${escapeHtml(d.goal)}</div>` : ''}
             <p style="font-size:0.82rem;color:var(--color-text-secondary);margin-bottom:8px;">${escapeHtml(d.content)}</p>
             <div style="background:var(--color-primary-alpha);border-radius:8px;padding:10px;">
               <p style="font-size:0.85rem;color:var(--color-primary-dark);">&#9989; <strong>任务：</strong>${escapeHtml(d.task)}</p>
             </div>
+            ${d.materials ? `<div style="font-size:0.78rem;color:var(--color-text-secondary);margin-top:8px;padding:6px 10px;background:var(--color-border);border-radius:6px;">&#128218; <strong>学习资料：</strong>${escapeHtml(d.materials)}</div>` : ''}
+            ${d.selfTest ? `<div style="font-size:0.78rem;color:var(--color-warning);margin-top:6px;padding:6px 10px;background:rgba(201,155,155,0.08);border-radius:6px;">&#9999; <strong>自测题：</strong>${escapeHtml(d.selfTest)}</div>` : ''}
             <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
               <button class="btn ${status === 'done' ? 'btn-primary' : 'btn-outline'} btn-sm btn-today-done">完成</button>
-              <button class="btn ${status === 'makeup' ? 'btn-primary' : 'btn-outline'} btn-sm btn-today-makeup">补办</button>
-              <button class="btn ${status === 'skip' ? 'btn-primary' : 'btn-outline'} btn-sm btn-today-skip">跳过</button>
+              <button class="btn ${status === 'makeup' ? 'btn-primary' : 'btn-outline'} btn-sm btn-today-makeup">补</button>
+              <button class="btn ${status === 'postpone' ? 'btn-primary' : 'btn-outline'} btn-sm btn-today-postpone">延后</button>
               <button class="btn btn-primary btn-sm" style="margin-left:auto;" id="btn-add-study-task">加入待办</button>
             </div>
           </div>`;
@@ -5306,16 +5410,56 @@ const App = (() => {
       let ts = DataManager.get('studyTaskStatus') || {};
       if (status === 'makeup' && ts[key] !== 'makeup') {
         Modal.openForm({
-          title: '补办日期',
-          fields: [{ name: 'date', label: '补办日期', type: 'date', required: true, value: todayStr }],
+          title: '补做日期',
+          fields: [{ name: 'date', label: '补做日期', type: 'date', required: true, value: todayStr }],
           onConfirm: (data) => {
             ts[key] = 'makeup';
             ts[key + '-date'] = data.date;
             DataManager.set('studyTaskStatus', ts);
-            Toast.show('已标记为补办', 'success');
+            Toast.show('已标记为补做', 'success');
             renderStudyBreakdown();
           }
         });
+      } else if (status === 'postpone') {
+        // 延后：标记任务为延后，并将任务内容加入次日日计划
+        if (ts[key] === 'postpone') {
+          // 取消延后
+          delete ts[key];
+          DataManager.set('studyTaskStatus', ts);
+          Toast.show('已取消延后', 'info');
+          renderStudyBreakdown();
+        } else {
+          // 找到任务详情
+          let taskData = null;
+          rp.weeklySchedule.forEach(week => {
+            week.days.forEach((d, i) => {
+              if (`w${week.week}-d${i}` === key) taskData = d;
+            });
+          });
+          if (taskData) {
+            // 计算明天日期
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const tomorrowStr = tomorrow.toISOString().slice(0, 10);
+            
+            // 加入明日日计划
+            DataManager.addRecord('dailyPlans', {
+              title: `[延后] ${taskData.topic}`,
+              desc: taskData.task,
+              priority: 'high',
+              date: tomorrowStr,
+              done: false,
+              isPostponedStudy: true,
+              originalKey: key
+            });
+            
+            ts[key] = 'postpone';
+            ts[key + '-date'] = tomorrowStr;
+            DataManager.set('studyTaskStatus', ts);
+            Toast.show(`已延后到明天（${tomorrowStr}）`, 'success');
+            renderStudyBreakdown();
+          }
+        }
       } else {
         if (ts[key] === status) { delete ts[key]; delete ts[key + '-date']; }
         else { ts[key] = status; if (status !== 'makeup') delete ts[key + '-date']; }
@@ -5330,8 +5474,8 @@ const App = (() => {
     content.querySelectorAll('.btn-task-makeup').forEach(btn => {
       btn.addEventListener('click', () => setTaskStatus(btn.getAttribute('data-key'), 'makeup'));
     });
-    content.querySelectorAll('.btn-task-skip').forEach(btn => {
-      btn.addEventListener('click', () => setTaskStatus(btn.getAttribute('data-key'), 'skip'));
+    content.querySelectorAll('.btn-task-postpone').forEach(btn => {
+      btn.addEventListener('click', () => setTaskStatus(btn.getAttribute('data-key'), 'postpone'));
     });
 
     // 今日任务按钮
@@ -5340,7 +5484,7 @@ const App = (() => {
       const key = `w${week.week}-d${todayDayIndex}`;
       document.querySelector('.btn-today-done')?.addEventListener('click', () => setTaskStatus(key, 'done'));
       document.querySelector('.btn-today-makeup')?.addEventListener('click', () => setTaskStatus(key, 'makeup'));
-      document.querySelector('.btn-today-skip')?.addEventListener('click', () => setTaskStatus(key, 'skip'));
+      document.querySelector('.btn-today-postpone')?.addEventListener('click', () => setTaskStatus(key, 'postpone'));
     }
 
     // 周展开/收起
