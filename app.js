@@ -148,6 +148,37 @@ const DataManager = (() => {
           _data.profile.createdAt = new Date().toISOString();
         }
       }
+
+      // === 数据迁移：确保关键更新生效 ===
+      // 复查日期更新为已预约的8月3日
+      if (_data.healthStatus && _data.healthStatus.reviewDeadline !== '2026-08-03') {
+        _data.healthStatus.reviewDeadline = '2026-08-03';
+      }
+      // 确保症状记录包含最新的腹痛记录
+      if (_data.healthStatus && _data.healthStatus.symptoms) {
+        const hasLatestSymptom = _data.healthStatus.symptoms.some(
+          s => s.date === '2026-08-02' && s.symptom === '腹痛'
+        );
+        if (!hasLatestSymptom) {
+          _data.healthStatus.symptoms.unshift({
+            date: '2026-08-02', symptom: '腹痛',
+            detail: '晨起明显，其他时候不明显，已不出血', severity: 'mild'
+          });
+        }
+      }
+      // 添加推文和复查待办（如果不存在）
+      if (_data.dailyPlans && Array.isArray(_data.dailyPlans)) {
+        const addTodoIfMissing = (text, date, note, level) => {
+          const exists = _data.dailyPlans.some(p => p.text === text);
+          if (!exists) {
+            _data.dailyPlans.unshift({ text, level, done: false, date, note });
+          }
+        };
+        addTodoIfMissing('复查B超（人流术后复查）', '2026-08-03', '已预约，去医院', 'high');
+        addTodoIfMissing('写微信公众号推文（第1篇）', '2026-08-05', '截止8月5日前完成', 'high');
+        addTodoIfMissing('写微信公众号推文（第2篇）', '2026-09-05', '截止9月5日前完成', 'mid');
+      }
+
       save();
     } catch (e) {
       console.error('[DataManager] 初始化失败:', e);
