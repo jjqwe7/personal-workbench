@@ -1,10 +1,10 @@
 /**
  * Service Worker - 个人工作台 PWA
- * 版本: v1
+ * 版本: v9
  * 功能: 缓存首页HTML及静态资源，支持离线访问
  */
 
-const CACHE_NAME = 'workbench-v8';
+const CACHE_NAME = 'workbench-v9';
 
 // 需要预缓存的资源列表
 const PRECACHE_URLS = [
