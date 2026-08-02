@@ -3653,7 +3653,7 @@ const App = (() => {
 
     const moodEmojis = ['😢', '😟', '😐', '🙂', '😄'];
     const moodLabels = ['很差', '不好', '一般', '不错', '很好'];
-    const bowelOptions = ['成型', '不成形', '粘腻', '干结', '腹泻'];
+    const bowelOptions = ['成型', '不成形', '粘腻', '粘马桶', '偏干', '干结', '腹泻', '便秘未排'];
 
     content.innerHTML = `
       <div class="page">
@@ -3704,7 +3704,7 @@ const App = (() => {
           </div>
           ${todayBowel ? `
             <div style="padding:8px 0;">
-              <span class="tag tag-${todayBowel.formed === '成型' ? 'good' : todayBowel.formed === '干结' || todayBowel.formed === '腹泻' ? 'warning' : 'caution'}">${escapeHtml(todayBowel.formed)}</span>
+              <span class="tag tag-${todayBowel.formed === '成型' ? 'good' : (todayBowel.formed === '干结' || todayBowel.formed === '腹泻' || todayBowel.formed === '便秘未排') ? 'warning' : 'caution'}">${escapeHtml(todayBowel.formed)}</span>
               ${todayBowel.note ? `<p style="font-size:0.8rem;color:var(--color-text-secondary);margin-top:6px;">${escapeHtml(todayBowel.note)}</p>` : ''}
             </div>
             <button class="btn btn-outline btn-sm btn-block" id="btn-edit-bowel">&#9998; 修改</button>
@@ -3971,12 +3971,13 @@ const App = (() => {
           ${bowels.map(b => `
             <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:0.82rem;">
               <span style="color:var(--color-text-tertiary);">${b.date}</span>
-              <span class="tag tag-${b.formed === '成型' ? 'good' : b.formed === '干结' || b.formed === '腹泻' ? 'warning' : 'caution'}">${escapeHtml(b.formed)}</span>
+              <span class="tag tag-${b.formed === '成型' ? 'good' : (b.formed === '干结' || b.formed === '腹泻' || b.formed === '便秘未排') ? 'warning' : 'caution'}">${escapeHtml(b.formed)}</span>
             </div>
           `).join('')}
           <p style="font-size:0.78rem;color:var(--color-text-secondary);margin-top:6px;">
             ${bowels.filter(b => b.formed === '成型').length}/${bowels.length}天成型 ·
-            ${bowels.filter(b => b.formed === '粘腻' || b.formed === '不成形').length}天偏湿
+            ${bowels.filter(b => b.formed === '粘腻' || b.formed === '不成形' || b.formed === '粘马桶').length}天偏湿 ·
+            ${bowels.filter(b => b.formed === '偏干' || b.formed === '干结' || b.formed === '便秘未排').length}天偏干
           </p>
         </div>` : ''}
 
@@ -4003,7 +4004,9 @@ const App = (() => {
               if (moods.length > 0 && parseFloat(avgMood) < 3) tips.push('本周心情偏低，注意情绪调节，多休息多倾诉。');
               if (totalReadMin < 120) tips.push('阅读时间偏少，建议每天至少30分钟。');
               if (totalExpense > 500) tips.push('本周支出较高，注意控制花呗消费。');
-              if (bowels.filter(b => b.formed === '粘腻' || b.formed === '不成形').length >= 3) tips.push('大便偏湿不成形多日，脾虚湿困明显，建议少吃生冷油腻，喝陈皮生姜茶健脾化湿。');
+              if (bowels.filter(b => b.formed === '粘腻' || b.formed === '不成形' || b.formed === '粘马桶').length >= 3) tips.push('大便偏湿粘腻不成形多日，脾虚湿困明显，建议少吃生冷油腻，喝陈皮生姜茶健脾化湿。');
+              if (bowels.filter(b => b.formed === '偏干' || b.formed === '干结' || b.formed === '便秘未排').length >= 2) tips.push('排便偏干或便秘，津液不足，建议多喝温水，多吃银耳、火龙果、燕麦等润肠食物，忌辛辣烧烤。');
+              if (bowels.filter(b => b.formed === '腹泻').length >= 2) tips.push('腹泻多次，注意补充水分和电解质，饮食以清淡温软为主，如症状持续建议就医。');
               if (tips.length === 0) tips.push('本周整体状态良好，继续保持！');
               return tips.map(t => `<p style="padding:3px 0;">&#8226; ${t}</p>`).join('');
             })()}
