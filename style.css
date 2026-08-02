@@ -2320,3 +2320,73 @@ textarea.form-control {
   font-size: 0.75rem;
   color: var(--color-text-secondary);
 }
+
+/* ============================================ */
+/* 首页底部迷你日历样式 */
+/* ============================================ */
+.mini-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+.mini-cal-head {
+  text-align: center;
+  font-size: 0.62rem;
+  color: var(--color-text-secondary);
+  font-weight: 600;
+  padding: 2px 0;
+}
+.mini-cal-head.mini-cal-weekend {
+  color: var(--color-danger);
+}
+.mini-cal-cell {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 2px 1px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s;
+  min-height: 32px;
+}
+.mini-cal-cell:hover {
+  background: var(--color-primary-alpha);
+}
+.mini-cal-empty {
+  cursor: default;
+}
+.mini-cal-empty:hover {
+  background: transparent;
+}
+.mini-cal-today {
+  background: var(--color-primary);
+  border-radius: 4px;
+}
+.mini-cal-today .mini-cal-num {
+  color: #fff;
+  font-weight: 700;
+}
+.mini-cal-has-high {
+  background: rgba(201,155,155,0.06);
+}
+.mini-cal-all-done {
+  opacity: 0.5;
+}
+.mini-cal-num {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--color-text);
+  line-height: 1.2;
+}
+.mini-cal-dots {
+  display: flex;
+  gap: 2px;
+  margin-top: 2px;
+  align-items: center;
+  justify-content: center;
+}
+.home-calendar-section {
+  margin-top: 8px;
+}
