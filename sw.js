@@ -4,7 +4,7 @@
  * 功能: 缓存首页HTML及静态资源，支持离线访问
  */
 
-const CACHE_NAME = 'workbench-v10';
+const CACHE_NAME = 'workbench-v11';
 
 // 需要预缓存的资源列表
 const PRECACHE_URLS = [
