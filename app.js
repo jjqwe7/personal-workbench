@@ -1254,6 +1254,8 @@ const App = (() => {
     Router.register('weekly-report', renderWeeklyReport);
     Router.register('skincare-diary', renderSkincareDiary);
     Router.register('study-breakdown', renderStudyBreakdown);
+    Router.register('calendar-month', renderMonthlyCalendar);
+    Router.register('calendar-week', renderWeeklyCalendar);
   }
 
   // 路由前置守卫：检查是否已引导
@@ -1404,6 +1406,8 @@ const App = (() => {
     // 快速入口
     const quickLinks = [
       { label: '日常打卡', icon: '&#9989;', route: 'checkin' },
+      { label: '月日历', icon: '&#128197;', route: 'calendar-month' },
+      { label: '周日程', icon: '&#128198;', route: 'calendar-week' },
       { label: '本周总结', icon: '&#128196;', route: 'weekly-report' },
       { label: '购买顾问', icon: '&#128722;', route: 'purchase' },
       { label: '花呗', icon: '&#128179;', route: 'huabei' },
@@ -4272,6 +4276,359 @@ const App = (() => {
         done: false
       });
       Toast.show('已加入今日待办', 'success');
+    });
+  }
+
+  // ============================================
+  // 月度日历视图
+  // ============================================
+  function renderMonthlyCalendar() {
+    const content = document.getElementById('app-content');
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth(); // 0-11
+    const todayDate = today.getDate();
+    const monthNames = ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
+
+    // 收集本月所有计划事件
+    const allPlans = [
+      ...DataManager.get('dailyPlans').map(p => ({ ...p, source: '日计划' })),
+      ...DataManager.get('weeklyPlans').map(p => ({ ...p, source: '周计划' })),
+      ...DataManager.get('monthlyPlans').map(p => ({ ...p, source: '月计划' }))
+    ];
+
+    // 从五年战略里程碑中提取本月事件
+    const milestones = (typeof ContentData !== 'undefined' && ContentData.fiveYearPlan && ContentData.fiveYearPlan.milestones) || [];
+    const monthMilestones = milestones.filter(m => {
+      const parts = m.date.split('.');
+      return parseInt(parts[0]) === year && parseInt(parts[1]) === month + 1;
+    });
+
+    // 按日期分组事件
+    const eventsByDay = {};
+    allPlans.forEach(p => {
+      if (!p.date) return;
+      const d = new Date(p.date);
+      if (d.getFullYear() === year && d.getMonth() === month) {
+        const day = d.getDate();
+        if (!eventsByDay[day]) eventsByDay[day] = [];
+        eventsByDay[day].push(p);
+      }
+    });
+    monthMilestones.forEach(m => {
+      const parts = m.date.split('.');
+      const day = parseInt(parts[2]);
+      if (!eventsByDay[day]) eventsByDay[day] = [];
+      eventsByDay[day].push({ title: m.event, desc: m.type, priority: 'high', source: '里程碑', done: false, isMilestone: true });
+    });
+
+    // 生成日历
+    const firstDay = new Date(year, month, 1).getDay(); // 0=周日
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const weekDays = ['日','一','二','三','四','五','六'];
+
+    let calendarCells = '';
+    // 空白格
+    for (let i = 0; i < firstDay; i++) {
+      calendarCells += '<div class="cal-cell cal-empty"></div>';
+    }
+    // 日期格
+    for (let d = 1; d <= daysInMonth; d++) {
+      const isToday = d === todayDate;
+      const events = eventsByDay[d] || [];
+      const hasHigh = events.some(e => e.priority === 'high' || e.isMilestone);
+      const allDone = events.length > 0 && events.every(e => e.done);
+      const cellClass = `cal-cell ${isToday ? 'cal-today' : ''} ${hasHigh ? 'cal-has-high' : ''} ${allDone ? 'cal-all-done' : ''}`;
+
+      const eventDots = events.slice(0, 3).map(e => {
+        const dotClass = e.isMilestone ? 'cal-dot-milestone' : e.priority === 'high' ? 'cal-dot-high' : e.priority === 'medium' ? 'cal-dot-mid' : 'cal-dot-low';
+        const doneClass = e.done ? 'cal-dot-done' : '';
+        return `<span class="cal-dot ${dotClass} ${doneClass}"></span>`;
+      }).join('');
+      const moreLabel = events.length > 3 ? `<span class="cal-more">+${events.length - 3}</span>` : '';
+
+      calendarCells += `
+        <div class="${cellClass}" data-day="${d}">
+          <span class="cal-day-num">${d}</span>
+          <div class="cal-dots">${eventDots}${moreLabel}</div>
+        </div>`;
+    }
+
+    // 关键节点列表
+    const keyEvents = Object.entries(eventsByDay)
+      .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
+      .filter(([day, events]) => parseInt(day) >= todayDate)
+      .map(([day, events]) => {
+        const dayEvents = events.map(e => {
+          const tagClass = e.isMilestone ? 'tag-danger' : e.priority === 'high' ? 'tag-priority-high' : e.priority === 'medium' ? 'tag-priority-medium' : 'tag-priority-low';
+          const doneIcon = e.done ? '&#10003; ' : '';
+          return `<div class="cal-event-item">
+            <span class="cal-event-tag ${tagClass}">${escapeHtml(e.source)}</span>
+            <span class="cal-event-text ${e.done ? 'done' : ''}">${doneIcon}${escapeHtml(e.title)}${e.desc ? `<span class="cal-event-desc"> — ${escapeHtml(e.desc).substring(0, 40)}</span>` : ''}</span>
+          </div>`;
+        }).join('');
+        return `<div class="cal-event-day"><strong>${month + 1}月${day}日</strong>${dayEvents}</div>`;
+      }).join('');
+
+    content.innerHTML = `
+      <div class="page">
+        <div class="page-header">
+          <button class="btn btn-outline btn-sm" onclick="Router.navigate('home')">&#8592; 返回</button>
+          <h2>&#128197; ${year}年${monthNames[month]}</h2>
+          <span class="tag tag-info">今日${todayDate}日</span>
+        </div>
+
+        <!-- 日历网格 -->
+        <div class="card cal-card">
+          <div class="cal-weekdays">
+            ${weekDays.map((w, i) => `<div class="cal-weekday ${i === 0 || i === 6 ? 'cal-weekend-h' : ''}">${w}</div>`).join('')}
+          </div>
+          <div class="cal-grid">
+            ${calendarCells}
+          </div>
+        </div>
+
+        <!-- 图例 -->
+        <div class="cal-legend">
+          <span class="cal-legend-item"><span class="cal-dot cal-dot-high"></span>高优先级</span>
+          <span class="cal-legend-item"><span class="cal-dot cal-dot-mid"></span>中优先级</span>
+          <span class="cal-legend-item"><span class="cal-dot cal-dot-low"></span>低优先级</span>
+          <span class="cal-legend-item"><span class="cal-dot cal-dot-milestone"></span>里程碑</span>
+          <span class="cal-legend-item"><span class="cal-dot cal-dot-done"></span>已完成</span>
+        </div>
+
+        <!-- 本月关键节点 -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">&#128204; 本月关键节点（今日及之后）</span>
+          </div>
+          ${keyEvents || '<div class="empty-state-sm">本月后续暂无关键节点</div>'}
+        </div>
+
+        <!-- 本月已过去事件回顾 -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">&#128220; 本月已过事件</span>
+          </div>
+          ${Object.entries(eventsByDay)
+            .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
+            .filter(([day]) => parseInt(day) < todayDate)
+            .map(([day, events]) => {
+              const dayEvents = events.map(e => {
+                const tagClass = e.isMilestone ? 'tag-danger' : e.priority === 'high' ? 'tag-priority-high' : 'tag-priority-medium';
+                const doneIcon = e.done ? '&#10003; ' : '&#9744; ';
+                return `<div class="cal-event-item">
+                  <span class="cal-event-tag ${tagClass}">${escapeHtml(e.source)}</span>
+                  <span class="cal-event-text ${e.done ? 'done' : ''}">${doneIcon}${escapeHtml(e.title)}</span>
+                </div>`;
+              }).join('');
+              return `<div class="cal-event-day"><strong>${month + 1}月${day}日</strong>${dayEvents}</div>`;
+            }).join('') || '<div class="empty-state-sm">本月暂无已完成事件</div>'}
+        </div>
+      </div>
+    `;
+
+    // 点击日期查看详情
+    content.querySelectorAll('.cal-cell[data-day]').forEach(el => {
+      el.addEventListener('click', () => {
+        const day = parseInt(el.getAttribute('data-day'));
+        const events = eventsByDay[day] || [];
+        if (events.length === 0) return;
+        const eventList = events.map(e => {
+          const tagClass = e.isMilestone ? 'tag-danger' : e.priority === 'high' ? 'tag-priority-high' : 'tag-priority-medium';
+          return `<div class="cal-detail-item">
+            <span class="cal-event-tag ${tagClass}">${escapeHtml(e.source)}</span>
+            <strong>${e.done ? '&#10003; ' : ''}${escapeHtml(e.title)}</strong>
+            ${e.desc ? `<br><span style="font-size:0.8rem;color:var(--color-text-secondary);">${escapeHtml(e.desc)}</span>` : ''}
+          </div>`;
+        }).join('');
+        Modal.open({
+          title: `${month + 1}月${day}日`,
+          content: `<div class="cal-detail-list">${eventList}</div>`,
+          type: 'info'
+        });
+      });
+    });
+  }
+
+  // ============================================
+  // 周日历视图
+  // ============================================
+  function renderWeeklyCalendar() {
+    const content = document.getElementById('app-content');
+    const today = new Date();
+    const todayDay = today.getDay(); // 0=周日
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - (todayDay === 0 ? 6 : todayDay - 1)); // 本周一
+
+    const weekDays = ['周一','周二','周三','周四','周五','周六','周日'];
+    const weekDates = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      weekDates.push(d);
+    }
+
+    // 获取本周所有日计划
+    const dailyPlans = DataManager.get('dailyPlans');
+    const weekTasks = {};
+    const todayStr = today.toISOString().slice(0, 10);
+
+    dailyPlans.forEach(p => {
+      if (!p.date) return;
+      const planDate = new Date(p.date);
+      const planDay = planDay => weekDates.findIndex(d =>
+        d.getFullYear() === planDate.getFullYear() &&
+        d.getMonth() === planDate.getMonth() &&
+        d.getDate() === planDate.getDate()
+      );
+      const idx = planDay(p.date);
+      if (idx >= 0 && idx < 7) {
+        if (!weekTasks[idx]) weekTasks[idx] = [];
+        weekTasks[idx].push(p);
+      }
+    });
+
+    // 计算完成进度
+    const allWeekTasks = Object.values(weekTasks).flat();
+    const totalTasks = allWeekTasks.length;
+    const doneTasks = allWeekTasks.filter(t => t.done).length;
+    const progressPercent = totalTasks > 0 ? Math.round(doneTasks / totalTasks * 100) : 0;
+
+    // 本周重要事项（从周计划获取）
+    const weeklyPlans = DataManager.get('weeklyPlans');
+    const currentWeekPlan = weeklyPlans.length > 0 ? weeklyPlans[0] : null; // 当前周计划
+
+    // 生成每天卡片
+    const dayCards = weekDates.map((d, i) => {
+      const isToday = d.toDateString() === today.toDateString();
+      const isPast = d < today && !isToday;
+      const tasks = weekTasks[i] || [];
+      const dayDone = tasks.filter(t => t.done).length;
+      const dayTotal = tasks.length;
+      const dayPercent = dayTotal > 0 ? Math.round(dayDone / dayTotal * 100) : 0;
+
+      const taskItems = tasks.map(t => `
+        <div class="wcal-task ${t.done ? 'done' : ''} ${t.priority === 'high' ? 'wcal-task-high' : ''}">
+          <span class="wcal-task-check">${t.done ? '&#10003;' : '&#9744;'}</span>
+          <span class="wcal-task-text">${escapeHtml(t.title)}</span>
+        </div>
+      `).join('');
+
+      const dateStr = `${d.getMonth() + 1}/${d.getDate()}`;
+
+      return `
+        <div class="wcal-day-card ${isToday ? 'wcal-today' : ''} ${isPast ? 'wcal-past' : ''}">
+          <div class="wcal-day-header">
+            <span class="wcal-day-name">${weekDays[i]}</span>
+            <span class="wcal-day-date">${dateStr}</span>
+            ${isToday ? '<span class="tag tag-info">今天</span>' : ''}
+          </div>
+          ${dayTotal > 0 ? `
+            <div class="wcal-progress-bar">
+              <div class="wcal-progress-fill" style="width:${dayPercent}%"></div>
+            </div>
+            <div class="wcal-progress-text">${dayDone}/${dayTotal} 完成 (${dayPercent}%)</div>
+          ` : '<div class="wcal-no-task">暂无任务</div>'}
+          <div class="wcal-tasks">${taskItems}</div>
+        </div>
+      `;
+    }).join('');
+
+    // 里程碑检查
+    const milestones = (typeof ContentData !== 'undefined' && ContentData.fiveYearPlan && ContentData.fiveYearPlan.milestones) || [];
+    const weekStartStr = weekDates[0].toISOString().slice(0, 10).replace(/-/g, '.');
+    const weekEndStr = weekDates[6].toISOString().slice(0, 10).replace(/-/g, '.');
+    const weekMilestones = milestones.filter(m => {
+      const parts = m.date.split('.');
+      const mDate = new Date(parts[0], parseInt(parts[1]) - 1, parts[2] || 1);
+      return mDate >= weekDates[0] && mDate <= weekDates[6];
+    });
+
+    content.innerHTML = `
+      <div class="page">
+        <div class="page-header">
+          <button class="btn btn-outline btn-sm" onclick="Router.navigate('home')">&#8592; 返回</button>
+          <h2>&#128198; 本周日程</h2>
+          <span class="tag tag-info">${weekDates[0].getMonth()+1}/${weekDates[0].getDate()} - ${weekDates[6].getMonth()+1}/${weekDates[6].getDate()}</span>
+        </div>
+
+        <!-- 本周总进度 -->
+        <div class="card wcal-overview">
+          <div class="wcal-overview-header">
+            <span class="card-title">&#128202; 本周完成进度</span>
+            <span class="wcal-overview-percent">${progressPercent}%</span>
+          </div>
+          <div class="wcal-overview-bar">
+            <div class="wcal-overview-fill" style="width:${progressPercent}%"></div>
+          </div>
+          <div class="wcal-overview-stats">
+            <span>已完成 ${doneTasks} 项</span>
+            <span>共 ${totalTasks} 项</span>
+            <span>剩余 ${totalTasks - doneTasks} 项</span>
+          </div>
+        </div>
+
+        ${currentWeekPlan ? `
+        <!-- 本周主要任务 -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">&#128204; 本周主要任务</span>
+          </div>
+          <p style="font-weight:600;margin-bottom:6px;">${escapeHtml(currentWeekPlan.title)}</p>
+          <p style="font-size:0.85rem;color:var(--color-text-secondary);line-height:1.6;">${escapeHtml(currentWeekPlan.desc)}</p>
+          ${currentWeekPlan.date ? `<div style="margin-top:6px;"><span class="tag tag-date-small">截止 ${currentWeekPlan.date}</span></div>` : ''}
+        </div>
+        ` : ''}
+
+        ${weekMilestones.length > 0 ? `
+        <!-- 本周里程碑 -->
+        <div class="card" style="border-left:4px solid var(--color-danger);">
+          <div class="card-header">
+            <span class="card-title">&#9888; 本周里程碑</span>
+          </div>
+          ${weekMilestones.map(m => `
+            <div class="wcal-milestone">
+              <span class="tag tag-danger">${escapeHtml(m.type)}</span>
+              <span class="wcal-milestone-text">${escapeHtml(m.event)}</span>
+              <span class="wcal-milestone-date">${escapeHtml(m.date)}</span>
+            </div>
+          `).join('')}
+        </div>
+        ` : ''}
+
+        <!-- 7天日程 -->
+        <div class="wcal-days">
+          ${dayCards}
+        </div>
+      </div>
+    `;
+
+    // 点击任务切换完成状态
+    content.querySelectorAll('.wcal-task').forEach((el, idx) => {
+      el.addEventListener('click', () => {
+        // 找到对应的任务
+        let count = 0;
+        for (let i = 0; i < 7; i++) {
+          const tasks = weekTasks[i] || [];
+          for (let j = 0; j < tasks.length; j++) {
+            if (count === idx) {
+              const plan = tasks[j];
+              // 在dailyPlans中找到并更新
+              const realPlan = dailyPlans.find(p =>
+                p.title === plan.title && p.date === plan.date
+              );
+              if (realPlan) {
+                DataManager.updateRecord('dailyPlans', realPlan.id, { done: !realPlan.done });
+                Toast.show(realPlan.done ? '已标记为未完成' : '已完成', 'success');
+                renderWeeklyCalendar();
+              }
+              return;
+            }
+            count++;
+          }
+        }
+      });
     });
   }
 
