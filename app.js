@@ -26,13 +26,17 @@ const DataManager = (() => {
       gender: '',
       height: '',
       weight: '',
-      constitution: '平和质',
+      constitution: '阳虚质',
       allergies: [],
       createdAt: null,
       onboarded: false
     },
 
-    dailyPlans: [],
+    dailyPlans: [
+      { text: '写微信公众号推文（第1篇）', level: 'high', done: false, date: '2026-08-05', note: '截止8月5日前完成' },
+      { text: '写微信公众号推文（第2篇）', level: 'mid', done: false, date: '2026-09-05', note: '截止9月5日前完成' },
+      { text: '复查B超（人流术后复查）', level: 'high', done: false, date: '2026-08-03', note: '已预约，明天去医院' }
+    ],
     weeklyPlans: [],
     monthlyPlans: [],
     yearlyPlans: [],
@@ -48,6 +52,13 @@ const DataManager = (() => {
     skincareRoutine: {      // 早晚护肤流程
       morning: [],
       evening: []
+    },
+    constitutionDetail: {   // 体质详细诊断（AI管家填写）
+      primary: '阳虚质',
+      secondary: ['脾虚湿困', '血瘀'],
+      diagnosis: '怕冷手脚凉、嗜睡难起、饭后犯困、大便粘不成形（脾虚湿困）；月经色深有血块、下巴经前痤疮加重（寒凝血瘀）',
+      skinType: '寒凝血瘀型痤疮（非单纯湿热）',
+      dietDirection: '温阳化湿 + 活血化瘀 + 疏肝理气，忌贪凉清热'
     },
 
     dietRecords: [],
@@ -89,6 +100,33 @@ const DataManager = (() => {
       studyHourGoal: 4,
       notificationsEnabled: true,
       themeMode: 'light'
+    },
+
+    // 健康状态（AI管家动态更新，影响所有板块联动）
+    healthStatus: {
+      condition: 'postpartum_recovery',  // 术后恢复期
+      eventName: '人流手术',
+      eventDate: '2026-07-20',
+      eventTime: '11:00',
+      dayOfEvent: 0,       // 自动计算：术后第几天
+      phase: 'recovery_2w', // recovery_2w(0-14天) | recovery_6w(15-42天) | normal
+      restrictions: ['禁止剧烈运动', '禁止盆浴游泳', '忌寒凉生冷', '忌辛辣刺激', '需复查B超'],
+      dietFocus: '温补气血、化瘀排露、健脾暖宫',
+      exerciseLevel: 'none', // none | light | moderate | full
+      skincareNote: '激素波动期，皮肤可能爆痘或敏感，温和护理为主，暂停刷酸',
+      symptoms: [
+        { date: '2026-08-02', symptom: '腹痛', detail: '晨起明显，其他时候不明显，已不出血', severity: 'mild' }
+      ],
+      reviewDeadline: '2026-08-03',  // 复查B超日期（已预约）
+      reviewStatus: 'pending'  // pending | done
+    },
+
+    // 日常打卡（综合）
+    dailyCheckin: {
+      mood: [],        // 心情记录 {date, score(1-5), note}
+      bowel: [],       // 排便记录 {date, formed:'成型'|'不成形'|'粘腻'|'干结', note}
+      reading: [],     // 阅读记录 {date, minutes, content}
+      water: []        // 喝水记录 {date, cups}
     }
   };
 
@@ -601,11 +639,34 @@ const LinkageManager = (() => {
     '休息日':   { baseAdjust: 1.0, proteinExtra: 0 }
   };
 
+  // 阳虚质体质专属茶饮覆盖：即使盛夏也不喝寒凉茶
+  const yangDefTeaOverrides = {
+    '大暑':   { tea: '生姜红枣茶', desc: '温阳散寒，冬病夏治三伏天', avoid: ['冰饮', '莲子芯', '绿豆汤', '西瓜'] },
+    '小暑':   { tea: '陈皮生姜茶', desc: '理气温阳，健脾化湿', avoid: ['冰饮', '凉茶', '绿豆'] },
+    '夏至':   { tea: '玫瑰花红枣茶', desc: '温阳活血，疏肝理气', avoid: ['金银花', '菊花', '冷饮'] },
+    '芒种':   { tea: '陈皮红枣茶', desc: '理气温阳，健脾化湿', avoid: ['酸梅汤(冰)', '冷饮'] },
+    '立夏':   { tea: '生姜红枣茶', desc: '温阳驱寒，顾护脾胃', avoid: ['薄荷', '绿茶(浓)', '冰饮'] },
+    '小满':   { tea: '桂圆红枣茶', desc: '温补心脾，养血安神', avoid: ['山楂麦冬', '冷饮'] },
+    '立秋':   { tea: '桂圆红枣茶', desc: '温补心脾，养血安神', avoid: ['银耳(寒)', '百合(寒)'] },
+    '处暑':   { tea: '玫瑰花茶', desc: '疏肝活血，理气解郁', avoid: ['蜂蜜柚子(凉)', '冷饮'] },
+    '春分':   { tea: '玫瑰花红枣茶', desc: '疏肝温阳，活血养颜', avoid: ['茉莉花(凉)', '绿茶'] },
+    '清明':   { tea: '生姜红枣茶', desc: '温阳护胃', avoid: ['龙井(寒凉)', '绿茶'] },
+    '谷雨':   { tea: '陈皮红枣茶', desc: '健脾化湿，温阳理气', avoid: ['薏米红豆(偏凉)', '冷饮'] },
+    '惊蛰':   { tea: '玫瑰花茶', desc: '疏肝理气，活血化瘀', avoid: ['菊花(寒)', '枸杞(滋腻)'] }
+  };
+
   function getSolarTermRecommend() {
     const now = new Date();
     const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
     const termIndex = Math.min(Math.floor((dayOfYear - 5) / 15), solarTerms.length - 1);
     const term = solarTerms[Math.max(0, termIndex)];
+
+    // 体质覆盖：阳虚质用温性茶替代寒凉茶
+    const constitution = DataManager.get('profile.constitution') || '平和质';
+    if (constitution === '阳虚质' && yangDefTeaOverrides[term.name]) {
+      const override = yangDefTeaOverrides[term.name];
+      return { name: term.name, tea: override.tea, desc: override.desc, avoid: override.avoid, constitutionAdjusted: true };
+    }
     return { name: term.name, tea: term.tea, desc: term.desc, avoid: term.avoid };
   }
 
@@ -659,11 +720,58 @@ const LinkageManager = (() => {
     };
   }
 
+  // 健康状态联动：术后恢复期影响所有板块
+  function getHealthStatus() {
+    const hs = DataManager.get('healthStatus') || {};
+    if (hs.condition !== 'postpartum_recovery') return { active: false };
+
+    const eventDate = new Date(hs.eventDate);
+    const today = new Date();
+    const daysSince = Math.floor((today - eventDate) / 86400000);
+
+    let phase = 'normal';
+    let dietFocus = '';
+    let exerciseLevel = 'full';
+    let restrictions = [];
+    let skincareNote = '';
+
+    if (daysSince <= 14) {
+      phase = 'recovery_2w';
+      dietFocus = '温补气血、化瘀排露、健脾暖宫。推荐：红枣桂圆小米粥、生姜红糖水、山药鸡汤。忌：一切寒凉生冷、绿豆、苦瓜、冷饮、西瓜';
+      exerciseLevel = 'none';
+      restrictions = ['禁止剧烈运动', '禁止盆浴游泳', '忌寒凉生冷', '忌辛辣刺激', '需复查B超'];
+      skincareNote = '术后2周内激素剧烈波动，暂停刷酸和功效品，只用温和保湿+防晒';
+    } else if (daysSince <= 42) {
+      phase = 'recovery_6w';
+      dietFocus = '继续温补调理，逐步恢复均衡饮食。推荐：当归生姜羊肉汤、红枣枸杞茶、黑豆排骨汤';
+      exerciseLevel = 'light';
+      restrictions = ['禁止剧烈运动(可散步)', '禁止盆浴游泳', '忌生冷'];
+      skincareNote = '激素逐步稳定，可恢复温和护肤，酸类从低频开始';
+    } else {
+      phase = 'normal';
+      exerciseLevel = 'full';
+    }
+
+    return {
+      active: true,
+      eventName: hs.eventName,
+      eventDate: hs.eventDate,
+      dayOfEvent: daysSince,
+      phase, dietFocus, exerciseLevel, restrictions, skincareNote,
+      isCritical: daysSince <= 14,
+      symptoms: hs.symptoms || [],
+      reviewDeadline: hs.reviewDeadline,
+      reviewStatus: hs.reviewStatus || 'pending',
+      reviewDaysLeft: hs.reviewDeadline ? Math.ceil((new Date(hs.reviewDeadline) - new Date()) / 86400000) : null
+    };
+  }
+
   function getDailyLinkageReport() {
     const solarTerm = getSolarTermRecommend();
     const constitution = DataManager.get('profile.constitution') || '平和质';
     const constitutionAdvice = getConstitutionAdvice(constitution);
     const financeDiet = getFinanceDietRecommendation();
+    const health = getHealthStatus();
 
     const todayExercise = DataManager.getTodayRecords('exerciseRecords');
     const exerciseType = todayExercise.length > 0 ? todayExercise[0].type : '休息日';
@@ -673,11 +781,22 @@ const LinkageManager = (() => {
     const skinCondition = todaySkincare.length > 0 ? (todaySkincare[0].skinCondition || '正常') : '正常';
     const skincareDiet = getSkincareDietAdvice(skinCondition);
 
+    let summary = `今日节气「${solarTerm.name}」，推荐${solarTerm.tea}。`;
+    if (health.active) {
+      summary += `【${health.eventName}恢复第${health.dayOfEvent}天·${health.phase === 'recovery_2w' ? '关键恢复期' : health.phase === 'recovery_6w' ? '调理期' : '已恢复'}】${health.dietFocus}。`;
+    }
+    summary += financeDiet.tips + '。';
+    if (skinCondition !== '正常') summary += `皮肤状态「${skinCondition}」，注意${skincareDiet.avoid.join('、')}。`;
+    if (health.active && health.phase !== 'normal') {
+      summary += `运动：${health.exerciseLevel === 'none' ? '暂停运动，以休息为主' : '可轻度散步'}。`;
+      summary += `护肤：${health.skincareNote}。`;
+    } else if (exerciseType !== '休息日') {
+      summary += exerciseDiet.tips + '。';
+    }
+
     return {
-      solarTerm, constitution: constitutionAdvice, financeDiet, exerciseDiet, skincareDiet,
-      summary: `今日节气「${solarTerm.name}」，推荐${solarTerm.tea}。${financeDiet.tips}。` +
-        (skinCondition !== '正常' ? `皮肤状态「${skinCondition}」，注意${skincareDiet.avoid.join('、')}。` : '') +
-        (exerciseType !== '休息日' ? `${exerciseDiet.tips}。` : '')
+      solarTerm, constitution: constitutionAdvice, financeDiet, exerciseDiet, skincareDiet, health,
+      summary
     };
   }
 
@@ -698,7 +817,7 @@ const LinkageManager = (() => {
   return {
     getSolarTermRecommend, getConstitutionAdvice, getFinanceDietRecommendation,
     getSkincareDietAdvice, getExerciseDietAdjustment, getDailyLinkageReport,
-    getTodayCheckinStatus,
+    getTodayCheckinStatus, getHealthStatus,
     get constitutions() { return constitutions; },
     get solarTerms() { return solarTerms; }
   };
@@ -1059,6 +1178,10 @@ const App = (() => {
     Router.register('skincare-strategy', renderSkinStrategy);
     Router.register('strategy-five-year-detail', renderFiveYearPlanDetail);
     Router.register('study-research-plan', renderResearchPlan);
+    Router.register('checkin', renderDailyCheckin);
+    Router.register('weekly-report', renderWeeklyReport);
+    Router.register('skincare-diary', renderSkincareDiary);
+    Router.register('study-breakdown', renderStudyBreakdown);
   }
 
   // 路由前置守卫：检查是否已引导
@@ -1208,6 +1331,8 @@ const App = (() => {
 
     // 快速入口
     const quickLinks = [
+      { label: '日常打卡', icon: '&#9989;', route: 'checkin' },
+      { label: '本周总结', icon: '&#128196;', route: 'weekly-report' },
       { label: '购买顾问', icon: '&#128722;', route: 'purchase' },
       { label: '花呗', icon: '&#128179;', route: 'huabei' },
       { label: '文献', icon: '&#128214;', route: 'literature' },
@@ -1268,6 +1393,27 @@ const App = (() => {
             </div>
           `).join('')}
         </div>
+
+        <!-- 健康恢复提醒（术后恢复期） -->
+        ${report.health && report.health.active && report.health.phase !== 'normal' ? `
+        <div class="card" style="border-left:4px solid ${report.health.reviewDaysLeft !== null && report.health.reviewDaysLeft <= 3 ? 'var(--color-danger)' : 'var(--color-warning)'};background:rgba(212,181,130,0.06);">
+          <div class="card-header">
+            <span class="card-title">&#128249; ${escapeHtml(report.health.eventName)}恢复 · 第${report.health.dayOfEvent}天</span>
+            <span class="tag tag-${report.health.phase === 'recovery_2w' ? 'warning' : 'caution'}">${report.health.phase === 'recovery_2w' ? '关键期' : '调理期'}</span>
+          </div>
+          <p style="font-size:0.8rem;color:var(--color-text-secondary);margin-bottom:6px;">${escapeHtml(report.health.dietFocus)}</p>
+          ${report.health.reviewStatus === 'pending' && report.health.reviewDaysLeft !== null ? `
+          <div style="font-size:0.82rem;padding:8px 10px;border-radius:6px;margin:6px 0;background:${report.health.reviewDaysLeft <= 0 ? 'rgba(220,80,80,0.12)' : 'rgba(212,181,130,0.15)'};color:${report.health.reviewDaysLeft <= 0 ? 'var(--color-danger)' : 'var(--color-warning)'};">
+            &#9888; <strong>复查B超倒计时：${report.health.reviewDaysLeft <= 0 ? '已超期！请尽快就诊' : `还剩${report.health.reviewDaysLeft}天（8月10日前）`}</strong>
+          </div>` : (report.health.reviewStatus === 'done' ? '<div style="font-size:0.8rem;color:var(--color-primary);">&#10003; 已复查B超</div>' : '')}
+          ${report.health.symptoms && report.health.symptoms.length > 0 ? `
+          <div style="font-size:0.78rem;color:var(--color-text-tertiary);margin-top:4px;">
+            &#128221; 症状记录：${report.health.symptoms.map(s => `${escapeHtml(s.symptom)}(${escapeHtml(s.detail)})`).join('；')}
+          </div>` : ''}
+          <div style="font-size:0.75rem;color:var(--color-danger);margin-top:4px;">
+            就医红线：腹痛加剧/发热/异味分泌物/突然大出血 &rarr; 立即就医
+          </div>
+        </div>` : ''}
 
         <!-- 今日待办 -->
         <div class="card">
@@ -1832,19 +1978,85 @@ const App = (() => {
     const morning = DataManager.get('skincareRoutine.morning') || [];
     const evening = DataManager.get('skincareRoutine.evening') || [];
 
+    // 今日护肤排班（自动按星期几）
+    const today = new Date();
+    const dayOfWeek = today.getDay();
+    const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+    const strategy = (typeof ContentData !== 'undefined' && ContentData.skinStrategy) ? ContentData.skinStrategy : null;
+
+    let activeIngredient = '';
+    let activeColor = '';
+    let activeNote = '';
+    if (dayOfWeek === 0) {
+      activeIngredient = '休战 · 纯保湿';
+      activeColor = 'var(--color-primary)';
+      activeNote = '今天给皮肤放假，只用基础保湿，不用任何功效品';
+    } else if ([1, 3, 5].includes(dayOfWeek)) {
+      activeIngredient = '水杨酸棉片';
+      activeColor = 'var(--color-warning)';
+      activeNote = '轻擦T区+下巴，2-3分钟。用酸当晚停用维C，注意保湿和次日防晒';
+    } else {
+      activeIngredient = 'VOODOO维C面膜';
+      activeColor = 'var(--color-info)';
+      activeNote = '美白淡印，敷15分钟后洗掉。维C当晚不用酸';
+    }
+
+    const morningRoutine = strategy ? strategy.morningRoutine : [];
+    const eveningRoutine = strategy ? strategy.eveningRoutine : [];
+    const morningNote = strategy ? strategy.morningNote : '';
+    const eveningNote = strategy ? strategy.eveningNote : '';
+
     content.innerHTML = `
       <div class="page">
         <div class="page-header">
           <button class="btn btn-outline btn-sm" onclick="Router.navigate('skincare')">&#8592; 返回</button>
-          <h2>&#9881; 护肤流程</h2>
+          <h2>&#9888; 护肤流程</h2>
         </div>
 
+        <!-- 今日护肤排班（自动） -->
+        <div class="card today-routine-card" style="border-left:4px solid ${activeColor};">
+          <div class="card-header">
+            <span class="card-title">&#128197; 今日流程 · 星期${weekdays[dayOfWeek]}</span>
+            <span class="tag" style="background:${activeColor};color:#fff;font-size:0.75rem;padding:2px 10px;border-radius:12px;">${activeIngredient}</span>
+          </div>
+          <div style="font-size:0.82rem;color:var(--color-text-secondary);margin-bottom:12px;">${escapeHtml(activeNote)}</div>
+
+          <div style="margin-bottom:14px;">
+            <h4 style="font-size:0.9rem;color:var(--color-text);margin-bottom:6px;">&#9728; 晨间（${morningRoutine.length}步）</h4>
+            ${morningRoutine.length === 0 ? '<span style="font-size:0.8rem;color:var(--color-text-tertiary);">暂无数据</span>' :
+              morningRoutine.map((step, i) => `
+                <div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:0.85rem;color:var(--color-text);">
+                  <span style="display:inline-flex;width:20px;height:20px;border-radius:50%;background:var(--color-primary-alpha);color:var(--color-primary);font-size:0.7rem;align-items:center;justify-content:center;flex-shrink:0;">${i + 1}</span>
+                  <span>${escapeHtml(step)}</span>
+                </div>
+              `).join('')
+            }
+            ${morningNote ? `<div style="font-size:0.78rem;color:var(--color-warning);margin-top:6px;padding:6px 10px;background:rgba(212,181,130,0.1);border-radius:6px;">&#9888; ${escapeHtml(morningNote)}</div>` : ''}
+          </div>
+
+          <div>
+            <h4 style="font-size:0.9rem;color:var(--color-text);margin-bottom:6px;">&#9789; 晚间（${eveningRoutine.length}步）</h4>
+            ${eveningRoutine.length === 0 ? '<span style="font-size:0.8rem;color:var(--color-text-tertiary);">暂无数据</span>' :
+              eveningRoutine.map((step, i) => {
+                const isAcidStep = step.includes('功效品') || step.includes('排班');
+                return `
+                <div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:0.85rem;color:var(--color-text);${isAcidStep ? 'background:rgba(212,181,130,0.08);border-radius:6px;padding:6px 8px;margin:2px 0;' : ''}">
+                  <span style="display:inline-flex;width:20px;height:20px;border-radius:50%;background:var(--color-primary-alpha);color:var(--color-primary);font-size:0.7rem;align-items:center;justify-content:center;flex-shrink:0;">${i + 1}</span>
+                  <span>${escapeHtml(step)}${isAcidStep ? ` &rarr; <strong style="color:${activeColor};">${activeIngredient}</strong>` : ''}</span>
+                </div>
+              `}).join('')
+            }
+            ${eveningNote ? `<div style="font-size:0.78rem;color:var(--color-text-secondary);margin-top:6px;padding:6px 10px;background:rgba(157,174,148,0.08);border-radius:6px;">&#128221; ${escapeHtml(eveningNote)}</div>` : ''}
+          </div>
+        </div>
+
+        <!-- 自定义晨间流程 -->
         <div class="card">
           <div class="card-header">
             <span class="card-title">&#9728; 晨间流程</span>
             <button class="btn btn-outline btn-sm" id="btn-add-morning">+ 步骤</button>
           </div>
-          ${morning.length === 0 ? '<div class="empty-state-sm">暂未设置</div>' :
+          ${morning.length === 0 ? '<div class="empty-state-sm">暂未设置自定义步骤</div>' :
             morning.map((step, i) => `
               <div class="routine-step">
                 <span class="step-num">${i + 1}</span>
@@ -1855,12 +2067,13 @@ const App = (() => {
           }
         </div>
 
+        <!-- 自定义晚间流程 -->
         <div class="card">
           <div class="card-header">
             <span class="card-title">&#9789; 晚间流程</span>
             <button class="btn btn-outline btn-sm" id="btn-add-evening">+ 步骤</button>
           </div>
-          ${evening.length === 0 ? '<div class="empty-state-sm">暂未设置</div>' :
+          ${evening.length === 0 ? '<div class="empty-state-sm">暂未设置自定义步骤</div>' :
             evening.map((step, i) => `
               <div class="routine-step">
                 <span class="step-num">${i + 1}</span>
@@ -2319,6 +2532,10 @@ const App = (() => {
                   <span class="tag tag-category">${escapeHtml(r.category || '')}</span>
                   <span class="tag tag-date-small">${r.date || ''}</span>
                 </div>
+                <div class="record-actions">
+                  <button class="btn-edit" data-id="${r.id}">&#9998;</button>
+                  <button class="btn-delete" data-id="${r.id}">&#10007;</button>
+                </div>
               </div>
             `).join('')}
         </div>
@@ -2341,7 +2558,6 @@ const App = (() => {
           data.date = new Date().toISOString().slice(0, 10);
           data.amount = parseFloat(data.amount) || 0;
           DataManager.addRecord('financeRecords', data);
-          // 如果是花呗支付，同步到花呗记录
           if (data.huabei === '是' && data.type === 'expense') {
             DataManager.addRecord('huabeiRecords', {
               date: data.date,
@@ -2353,6 +2569,46 @@ const App = (() => {
           Toast.show('财务记录已保存', 'success');
           renderFinance();
         }
+      });
+    });
+
+    content.querySelectorAll('.btn-edit').forEach(el => {
+      el.addEventListener('click', () => {
+        const id = el.getAttribute('data-id');
+        const r = records.find(x => x.id === id);
+        if (!r) return;
+        Modal.openForm({
+          title: '编辑财务记录',
+          fields: [
+            { name: 'type', label: '类型', type: 'select', required: true, value: r.type,
+              options: [{ value: 'expense', label: '支出' }, { value: 'income', label: '收入' }] },
+            { name: 'amount', label: '金额(元)', type: 'number', required: true, step: '0.01', value: r.amount },
+            { name: 'category', label: '分类', type: 'select', value: r.category,
+              options: ['餐饮', '交通', '购物', '娱乐', '学习', '医疗', '护肤', '运动', '住房', '其他'] },
+            { name: 'note', label: '备注', type: 'textarea', value: r.note || '' },
+            { name: 'date', label: '日期', type: 'date', value: r.date || '' }
+          ],
+          onConfirm: (data) => {
+            data.amount = parseFloat(data.amount) || 0;
+            DataManager.updateRecord('financeRecords', id, data);
+            Toast.show('已更新', 'success');
+            renderFinance();
+          }
+        });
+      });
+    });
+
+    content.querySelectorAll('.btn-delete').forEach(el => {
+      el.addEventListener('click', () => {
+        const id = el.getAttribute('data-id');
+        Modal.open({
+          title: '确认删除', content: '<p>确定要删除这条财务记录吗？</p>', type: 'danger',
+          onConfirm: () => {
+            DataManager.deleteRecord('financeRecords', id);
+            Toast.show('已删除', 'info');
+            renderFinance();
+          }
+        });
       });
     });
 
@@ -2768,11 +3024,86 @@ const App = (() => {
   // ============================================
   // 战略规划模块
   // ============================================
+  // ============================================
+  // 战略自动拆解：根据今天日期找出当前阶段和任务
+  // ============================================
+  function getTodayStrategy() {
+    const today = new Date();
+    const todayStr = today.toISOString().slice(0, 10);
+    const result = { currentPhase: null, currentWeek: null, todayTask: null, upcomingMilestones: [], weeklyTasks: [] };
+
+    if (typeof ContentData === 'undefined' || !ContentData.fiveYearPlan) return result;
+
+    const plan = ContentData.fiveYearPlan;
+    // 找当前阶段
+    for (const phase of plan.phases) {
+      if (phase.subPhases) {
+        for (const sub of phase.subPhases) {
+          // 简化：不按精确日期匹配，而是展示当前月份附近的任务
+          result.currentPhase = phase;
+        }
+      }
+    }
+    // Phase 0 有精确任务日期
+    if (plan.phases[0] && plan.phases[0].tasks) {
+      result.currentPhase = plan.phases[0];
+    }
+
+    // 从科研学习计划找本周
+    if (ContentData.researchPlan && ContentData.researchPlan.weeklySchedule) {
+      const startDate = new Date('2026-07-27');
+      const daysDiff = Math.floor((today - startDate) / 86400000);
+      const weekNum = Math.floor(daysDiff / 7) + 1;
+      if (weekNum >= 1 && weekNum <= ContentData.researchPlan.weeklySchedule.length) {
+        const week = ContentData.researchPlan.weeklySchedule[weekNum - 1];
+        result.currentWeek = week;
+        // 找今天是周几对应的任务
+        const dayOfWeek = today.getDay(); // 0=Sunday
+        const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // 周一=0...周日=6
+        if (week.days && week.days[dayIndex]) {
+          result.todayTask = week.days[dayIndex];
+        }
+        // 本周所有任务汇总
+        if (week.days) {
+          result.weeklyTasks = week.days.map((d, i) => ({
+            dayLabel: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'][i],
+            date: d.date,
+            topic: d.topic,
+            task: d.task,
+            isToday: i === dayIndex
+          }));
+        }
+      }
+    }
+
+    // 近期里程碑（30天内）
+    if (ContentData.researchPlan && ContentData.researchPlan.hardDeadlines) {
+      const now = new Date();
+      const nowYear = now.getFullYear();
+      for (const m of ContentData.researchPlan.hardDeadlines) {
+        // 简化匹配：日期格式 "8/21-23" 或 "9月初" 等，只取月份数字
+        const monthMatch = m.date.match(/(\d+)\/(\d+)/);
+        if (monthMatch) {
+          const month = parseInt(monthMatch[1]);
+          const day = parseInt(monthMatch[2]);
+          const milestoneDate = new Date(nowYear, month - 1, day);
+          const diffDays = Math.ceil((milestoneDate - now) / 86400000);
+          if (diffDays >= -7 && diffDays <= 60) {
+            result.upcomingMilestones.push({ ...m, diffDays, formatted: `${month}月${day}日` });
+          }
+        }
+      }
+    }
+
+    return result;
+  }
+
   function renderStrategy() {
     const content = document.getElementById('app-content');
     const milestones = DataManager.get('milestoneProgress');
     const fiveYear = DataManager.get('fiveYearPlan');
     const riskPlans = DataManager.get('riskPlans');
+    const strat = getTodayStrategy();
 
     content.innerHTML = `
       <div class="page strategy-page">
@@ -2780,6 +3111,47 @@ const App = (() => {
           <h2>&#9733; 战略规划</h2>
           <button class="btn btn-outline btn-sm" onclick="Router.navigate('settings')">&#9881;</button>
         </div>
+
+        <!-- 今日战略焦点（自动） -->
+        ${strat.currentWeek ? `
+        <div class="card" style="border-left:4px solid var(--color-primary);">
+          <div class="card-header">
+            <span class="card-title">&#127919; 本周战略焦点</span>
+            <span class="tag" style="background:var(--color-primary);color:#fff;font-size:0.75rem;padding:2px 10px;border-radius:12px;">${escapeHtml(strat.currentWeek.title)}</span>
+          </div>
+          <p style="font-size:0.82rem;color:var(--color-text-secondary);margin-bottom:10px;">${escapeHtml(strat.currentWeek.date)} · 自动匹配你当前进度</p>
+
+          ${strat.todayTask ? `
+          <div style="background:rgba(157,174,148,0.1);border-radius:8px;padding:12px;margin-bottom:10px;">
+            <div style="font-size:0.75rem;color:var(--color-primary-dark);margin-bottom:4px;">&#128197; ${escapeHtml(strat.todayTask.date)}</div>
+            <div style="font-weight:600;color:var(--color-text);font-size:0.9rem;margin-bottom:4px;">${escapeHtml(strat.todayTask.topic)}</div>
+            <div style="font-size:0.82rem;color:var(--color-text-secondary);margin-bottom:6px;">${escapeHtml(strat.todayTask.content)}</div>
+            <div style="font-size:0.8rem;color:var(--color-primary-dark);background:var(--color-primary-alpha);padding:6px 10px;border-radius:6px;">&#9989; 今日任务：${escapeHtml(strat.todayTask.task)}</div>
+          </div>` : ''}
+
+          <details style="margin-top:8px;">
+            <summary style="font-size:0.82rem;color:var(--color-primary);cursor:pointer;padding:4px 0;">&#128194; 本周全部任务（${strat.weeklyTasks.length}天）</summary>
+            <div style="margin-top:8px;">
+              ${strat.weeklyTasks.map(t => `
+                <div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--color-border);font-size:0.8rem;${t.isToday ? 'background:rgba(157,174,148,0.08);border-radius:6px;padding:6px 8px;' : ''}">
+                  <span style="color:var(--color-text-tertiary);min-width:80px;">${escapeHtml(t.date)}</span>
+                  <span style="flex:1;color:var(--color-text);${t.isToday ? 'font-weight:600;' : ''}">${escapeHtml(t.topic)}${t.isToday ? ' &larr;今天' : ''}</span>
+                </div>
+              `).join('')}
+            </div>
+          </details>
+
+          ${strat.upcomingMilestones.length > 0 ? `
+          <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--color-border);">
+            <div style="font-size:0.82rem;font-weight:600;color:var(--color-warning);margin-bottom:6px;">&#9888; 近期硬节点</div>
+            ${strat.upcomingMilestones.map(m => `
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:0.8rem;">
+                <span style="color:var(--color-text);">${escapeHtml(m.event)}</span>
+                <span style="color:${m.diffDays <= 7 ? 'var(--color-danger)' : m.diffDays <= 21 ? 'var(--color-warning)' : 'var(--color-text-tertiary)'};font-size:0.75rem;">${escapeHtml(m.formatted)}${m.diffDays >= 0 ? ` (${m.diffDays}天后)` : ` (${-m.diffDays}天前)`}</span>
+              </div>
+            `).join('')}
+          </div>` : ''}
+        </div>` : ''}
 
         <!-- 计划体系 -->
         <div class="card">
@@ -3005,6 +3377,7 @@ const App = (() => {
                     ${p.date ? `<span class="tag tag-date-small">${p.date}</span>` : ''}
                   </div>
                 </div>
+                <button class="btn-edit" data-id="${p.id}">&#9998;</button>
                 <button class="btn-delete" data-id="${p.id}">&#10007;</button>
               </div>
             `).join('')}
@@ -3039,6 +3412,29 @@ const App = (() => {
           DataManager.updateRecord(category, id, { done: !plan.done });
           renderPlanPage(category, title, icon);
         }
+      });
+    });
+
+    content.querySelectorAll('.btn-edit').forEach(el => {
+      el.addEventListener('click', () => {
+        const id = el.getAttribute('data-id');
+        const plan = plans.find(p => p.id === id);
+        if (!plan) return;
+        Modal.openForm({
+          title: `编辑${title}`,
+          fields: [
+            { name: 'title', label: '计划内容', type: 'text', required: true, value: plan.title || '' },
+            { name: 'desc', label: '详细说明', type: 'textarea', value: plan.desc || '' },
+            { name: 'priority', label: '优先级', type: 'select', value: plan.priority || '',
+              options: [{ value: 'high', label: '高' }, { value: 'medium', label: '中' }, { value: 'low', label: '低' }] },
+            { name: 'date', label: '截止日期', type: 'date', value: plan.date || '' }
+          ],
+          onConfirm: (data) => {
+            DataManager.updateRecord(category, id, data);
+            Toast.show('已更新', 'success');
+            renderPlanPage(category, title, icon);
+          }
+        });
       });
     });
 
@@ -3085,6 +3481,10 @@ const App = (() => {
                 <div class="record-header">
                   <span class="record-title">${r.date || ''}</span>
                   ${r.score ? `<span class="tag tag-progress">评分 ${r.score}/10</span>` : ''}
+                  <div class="record-actions">
+                    <button class="btn-edit" data-id="${r.id}">&#9998;</button>
+                    <button class="btn-delete" data-id="${r.id}">&#10007;</button>
+                  </div>
                 </div>
                 ${r.done ? `<p class="record-content"><strong>完成事项：</strong>${escapeHtml(r.done)}</p>` : ''}
                 ${r.undone ? `<p class="record-content"><strong>未完成：</strong>${escapeHtml(r.undone)}</p>` : ''}
@@ -3115,6 +3515,45 @@ const App = (() => {
         }
       });
     });
+
+    content.querySelectorAll('.btn-edit').forEach(el => {
+      el.addEventListener('click', () => {
+        const id = el.getAttribute('data-id');
+        const review = reviews.find(r => r.id === id);
+        if (!review) return;
+        Modal.openForm({
+          title: `编辑${title}`,
+          fields: [
+            { name: 'date', label: '日期', type: 'date', value: review.date || '', required: true },
+            { name: 'done', label: '完成事项', type: 'textarea', value: review.done || '' },
+            { name: 'undone', label: '未完成事项', type: 'textarea', value: review.undone || '' },
+            { name: 'improve', label: '改进方向', type: 'textarea', value: review.improve || '' },
+            { name: 'reflection', label: '心得反思', type: 'textarea', value: review.reflection || '' },
+            { name: 'score', label: '自评(1-10)', type: 'number', min: 1, max: 10, value: review.score || '' }
+          ],
+          onConfirm: (data) => {
+            data.score = parseInt(data.score) || 0;
+            DataManager.updateRecord(category, id, data);
+            Toast.show('已更新', 'success');
+            renderReviewPage(category, title, icon);
+          }
+        });
+      });
+    });
+
+    content.querySelectorAll('.btn-delete').forEach(el => {
+      el.addEventListener('click', () => {
+        const id = el.getAttribute('data-id');
+        Modal.open({
+          title: '确认删除', content: '<p>确定要删除这条复盘吗？</p>', type: 'danger',
+          onConfirm: () => {
+            DataManager.deleteRecord(category, id);
+            Toast.show('已删除', 'info');
+            renderReviewPage(category, title, icon);
+          }
+        });
+      });
+    });
   }
 
   function renderReviewDaily()   { renderReviewPage('dailyReviews', '日复盘', '&#128197;'); }
@@ -3122,6 +3561,647 @@ const App = (() => {
   function renderReviewMonthly() { renderReviewPage('monthlyReviews', '月复盘', '&#128203;'); }
   function renderReviewYearly()  { renderReviewPage('yearlyReviews', '半年复盘', '&#127942;'); }
 
+
+  // ============================================
+  // 日常打卡页面（心情/排便/阅读/喝水）
+  // ============================================
+  function renderDailyCheckin() {
+    const content = document.getElementById('app-content');
+    const today = new Date().toISOString().slice(0, 10);
+    const dc = DataManager.get('dailyCheckin') || { mood: [], bowel: [], reading: [], water: [] };
+
+    const todayMood = (dc.mood || []).find(m => m.date === today);
+    const todayBowel = (dc.bowel || []).find(b => b.date === today);
+    const todayReading = (dc.reading || []).find(r => r.date === today);
+    const todayWater = (dc.water || []).find(w => w.date === today);
+
+    const moodEmojis = ['😢', '😟', '😐', '🙂', '😄'];
+    const moodLabels = ['很差', '不好', '一般', '不错', '很好'];
+    const bowelOptions = ['成型', '不成形', '粘腻', '干结', '腹泻'];
+
+    content.innerHTML = `
+      <div class="page">
+        <div class="page-header">
+          <button class="btn btn-outline btn-sm" onclick="Router.navigate('home')">&#8592; 返回</button>
+          <h2>&#9989; 日常打卡</h2>
+        </div>
+
+        <!-- 健康状态提示 -->
+        ${(() => {
+          const h = LinkageManager.getHealthStatus();
+          if (!h.active || h.phase === 'normal') return '';
+          return `<div class="card" style="border-left:4px solid var(--color-warning);background:rgba(212,181,130,0.08);">
+            <div style="font-size:0.85rem;color:var(--color-text);"><strong>&#9888; ${escapeHtml(h.eventName)}恢复第${h.dayOfEvent}天</strong></div>
+            <div style="font-size:0.8rem;color:var(--color-text-secondary);margin-top:4px;">${escapeHtml(h.dietFocus)}</div>
+            <div style="font-size:0.78rem;color:var(--color-warning);margin-top:4px;">注意：${h.restrictions.join('、')}</div>
+          </div>`;
+        })()}
+
+        <!-- 心情打卡 -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">&#128522; 今日心情</span>
+            ${todayMood ? `<span class="tag tag-good">已打卡</span>` : ''}
+          </div>
+          ${todayMood ? `
+            <div style="text-align:center;padding:16px 0;">
+              <span style="font-size:2.5rem;">${moodEmojis[todayMood.score - 1] || '😐'}</span>
+              <div style="font-size:0.9rem;color:var(--color-text);margin-top:4px;">${moodLabels[todayMood.score - 1] || '一般'}</div>
+              ${todayMood.note ? `<div style="font-size:0.8rem;color:var(--color-text-secondary);margin-top:6px;">${escapeHtml(todayMood.note)}</div>` : ''}
+            </div>
+            <button class="btn btn-outline btn-sm btn-block" id="btn-edit-mood">&#9998; 修改</button>
+          ` : `
+            <div class="mood-picker" id="mood-picker">
+              ${moodEmojis.map((e, i) => `
+                <button class="mood-btn" data-score="${i + 1}" style="font-size:1.8rem;background:none;border:none;cursor:pointer;padding:8px;border-radius:8px;transition:background 0.2s;">${e}</button>
+              `).join('')}
+            </div>
+            <textarea id="mood-note" class="form-control" rows="2" placeholder="今天怎么样？（可选）" style="margin-top:8px;"></textarea>
+          `}
+        </div>
+
+        <!-- 排便打卡 -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">&#128701; 今日排便</span>
+            ${todayBowel ? `<span class="tag tag-good">已打卡</span>` : ''}
+          </div>
+          ${todayBowel ? `
+            <div style="padding:8px 0;">
+              <span class="tag tag-${todayBowel.formed === '成型' ? 'good' : todayBowel.formed === '干结' || todayBowel.formed === '腹泻' ? 'warning' : 'caution'}">${escapeHtml(todayBowel.formed)}</span>
+              ${todayBowel.note ? `<p style="font-size:0.8rem;color:var(--color-text-secondary);margin-top:6px;">${escapeHtml(todayBowel.note)}</p>` : ''}
+            </div>
+            <button class="btn btn-outline btn-sm btn-block" id="btn-edit-bowel">&#9998; 修改</button>
+          ` : `
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;" id="bowel-picker">
+              ${bowelOptions.map(o => `<button class="btn btn-outline btn-sm bowel-btn" data-formed="${o}">${o}</button>`).join('')}
+            </div>
+            <textarea id="bowel-note" class="form-control" rows="2" placeholder="备注（可选）" style="margin-top:8px;"></textarea>
+          `}
+        </div>
+
+        <!-- 喝水打卡 -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">&#128167; 今日喝水</span>
+            ${todayWater ? `<span class="tag tag-good">${todayWater.cups}杯</span>` : '<span class="tag tag-normal">未打卡</span>'}
+          </div>
+          <div style="text-align:center;padding:12px 0;">
+            <span style="font-size:2rem;color:var(--color-primary);">${todayWater ? todayWater.cups : 0}<span style="font-size:0.9rem;color:var(--color-text-tertiary);">/${DataManager.get('settings.dailyWaterTarget') || 8}杯</span></span>
+          </div>
+          <div style="display:flex;gap:8px;justify-content:center;">
+            <button class="btn btn-outline btn-sm" id="btn-water-minus">- 1杯</button>
+            <button class="btn btn-primary btn-sm" id="btn-water-plus">+ 1杯</button>
+          </div>
+        </div>
+
+        <!-- 阅读打卡 -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">&#128214; 今日阅读</span>
+            ${todayReading ? `<span class="tag tag-good">${todayReading.minutes}分钟</span>` : ''}
+          </div>
+          ${todayReading ? `
+            <div style="padding:8px 0;">
+              <p style="font-size:0.9rem;color:var(--color-text);">📖 ${escapeHtml(todayReading.content)}</p>
+              <p style="font-size:0.8rem;color:var(--color-text-secondary);">${todayReading.minutes}分钟</p>
+            </div>
+            <button class="btn btn-outline btn-sm btn-block" id="btn-edit-reading">&#9998; 修改</button>
+          ` : `
+            <button class="btn btn-primary btn-sm btn-block" id="btn-add-reading">+ 记录阅读</button>
+          `}
+        </div>
+
+        <!-- 最近7天打卡趋势 -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">&#128202; 最近7天</span></div>
+          <div style="font-size:0.8rem;">
+            ${(() => {
+              let html = '<div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span>日期</span><span>心情</span><span>排便</span><span>喝水</span><span>阅读</span></div>';
+              for (let i = 6; i >= 0; i--) {
+                const d = new Date(); d.setDate(d.getDate() - i);
+                const ds = d.toISOString().slice(0, 10);
+                const m = (dc.mood||[]).find(x => x.date === ds);
+                const b = (dc.bowel||[]).find(x => x.date === ds);
+                const w = (dc.water||[]).find(x => x.date === ds);
+                const r = (dc.reading||[]).find(x => x.date === ds);
+                html += `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--color-border);">
+                  <span style="color:var(--color-text-tertiary);">${d.getMonth()+1}/${d.getDate()}</span>
+                  <span>${m ? moodEmojis[m.score-1]||'·' : '·'}</span>
+                  <span>${b ? escapeHtml(b.formed.slice(0,2)) : '·'}</span>
+                  <span>${w ? w.cups+'杯' : '·'}</span>
+                  <span>${r ? r.minutes+'min' : '·'}</span>
+                </div>`;
+              }
+              return html;
+            })()}
+          </div>
+        </div>
+
+        <!-- 快捷入口：周报 -->
+        <button class="btn btn-outline btn-sm btn-block" onclick="Router.navigate('weekly-report')">&#128196; 查看本周整体总结</button>
+      </div>
+    `;
+
+    // 心情打卡
+    const moodPicker = document.getElementById('mood-picker');
+    if (moodPicker) {
+      moodPicker.querySelectorAll('.mood-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const score = parseInt(btn.getAttribute('data-score'));
+          const note = document.getElementById('mood-note')?.value || '';
+          const arr = dc.mood || [];
+          const idx = arr.findIndex(m => m.date === today);
+          if (idx >= 0) { arr[idx] = { date: today, score, note }; }
+          else { arr.push({ date: today, score, note }); }
+          DataManager.set('dailyCheckin.mood', arr);
+          Toast.show('心情已记录', 'success');
+          renderDailyCheckin();
+        });
+      });
+    }
+    const editMood = document.getElementById('btn-edit-mood');
+    if (editMood) {
+      editMood.addEventListener('click', () => {
+        const arr = dc.mood || [];
+        DataManager.set('dailyCheckin.mood', arr.filter(m => m.date !== today));
+        renderDailyCheckin();
+      });
+    }
+
+    // 排便打卡
+    const bowelPicker = document.getElementById('bowel-picker');
+    if (bowelPicker) {
+      bowelPicker.querySelectorAll('.bowel-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const formed = btn.getAttribute('data-formed');
+          const note = document.getElementById('bowel-note')?.value || '';
+          const arr = dc.bowel || [];
+          const idx = arr.findIndex(b => b.date === today);
+          if (idx >= 0) { arr[idx] = { date: today, formed, note }; }
+          else { arr.push({ date: today, formed, note }); }
+          DataManager.set('dailyCheckin.bowel', arr);
+          Toast.show('排便已记录', 'success');
+          renderDailyCheckin();
+        });
+      });
+    }
+
+    // 喝水
+    function updateWater(delta) {
+      const arr = dc.water || [];
+      let idx = arr.findIndex(w => w.date === today);
+      let cups;
+      if (idx >= 0) { cups = Math.max(0, (arr[idx].cups || 0) + delta); arr[idx].cups = cups; }
+      else { cups = Math.max(0, delta); arr.push({ date: today, cups }); }
+      DataManager.set('dailyCheckin.water', arr);
+      renderDailyCheckin();
+    }
+    document.getElementById('btn-water-plus')?.addEventListener('click', () => updateWater(1));
+    document.getElementById('btn-water-minus')?.addEventListener('click', () => updateWater(-1));
+
+    // 阅读打卡
+    document.getElementById('btn-add-reading')?.addEventListener('click', () => {
+      Modal.openForm({
+        title: '记录阅读',
+        fields: [
+          { name: 'content', label: '阅读内容', type: 'text', required: true, placeholder: '书名/文献/文章' },
+          { name: 'minutes', label: '时长(分钟)', type: 'number', required: true, placeholder: '30' }
+        ],
+        onConfirm: (data) => {
+          data.minutes = parseInt(data.minutes) || 0;
+          const arr = dc.reading || [];
+          const idx = arr.findIndex(r => r.date === today);
+          if (idx >= 0) { arr[idx] = { date: today, ...data }; }
+          else { arr.push({ date: today, ...data }); }
+          DataManager.set('dailyCheckin.reading', arr);
+          Toast.show('阅读已记录', 'success');
+          renderDailyCheckin();
+        }
+      });
+    });
+    document.getElementById('btn-edit-reading')?.addEventListener('click', () => {
+      Modal.openForm({
+        title: '修改阅读',
+        fields: [
+          { name: 'content', label: '阅读内容', type: 'text', required: true, value: todayReading?.content || '' },
+          { name: 'minutes', label: '时长(分钟)', type: 'number', required: true, value: todayReading?.minutes || 0 }
+        ],
+        onConfirm: (data) => {
+          data.minutes = parseInt(data.minutes) || 0;
+          const arr = dc.reading || [];
+          const idx = arr.findIndex(r => r.date === today);
+          if (idx >= 0) { arr[idx] = { date: today, ...data }; }
+          DataManager.set('dailyCheckin.reading', arr);
+          Toast.show('已更新', 'success');
+          renderDailyCheckin();
+        }
+      });
+    });
+  }
+
+  // ============================================
+  // 每周整体总结
+  // ============================================
+  function renderWeeklyReport() {
+    const content = document.getElementById('app-content');
+    const now = new Date();
+    // 本周一
+    const weekStart = new Date(now);
+    const day = now.getDay() || 7;
+    weekStart.setDate(now.getDate() - day + 1);
+    const weekStartStr = weekStart.toISOString().slice(0, 10);
+    const weekEndStr = now.toISOString().slice(0, 10);
+
+    const rangeRecords = (cat) => {
+      const all = DataManager.get(cat) || [];
+      return all.filter(r => r.date >= weekStartStr && r.date <= weekEndStr);
+    };
+    const rangeCheckin = (key) => {
+      const arr = (DataManager.get(`dailyCheckin.${key}`) || []);
+      return arr.filter(r => r.date >= weekStartStr && r.date <= weekEndStr);
+    };
+
+    const dietRecords = rangeRecords('dietRecords');
+    const exerciseRecords = rangeRecords('exerciseRecords');
+    const financeRecords = rangeRecords('financeRecords');
+    const studyRecords = rangeRecords('studyRecords');
+    const skincareRecords = rangeRecords('skincareRecords');
+    const moods = rangeCheckin('mood');
+    const bowels = rangeCheckin('bowel');
+    const waters = rangeCheckin('water');
+    const readings = rangeCheckin('reading');
+
+    const totalExpense = financeRecords.filter(r => r.type === 'expense').reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
+    const totalCalories = dietRecords.reduce((s, r) => s + (r.meals ? r.meals.reduce((a, m) => a + (parseInt(m.calories) || 0), 0) : 0), 0);
+    const totalReadMin = readings.reduce((s, r) => s + (parseInt(r.minutes) || 0), 0);
+    const avgMood = moods.length > 0 ? (moods.reduce((s, m) => s + m.score, 0) / moods.length).toFixed(1) : '—';
+    const waterDays = waters.length;
+
+    const health = LinkageManager.getHealthStatus();
+    const strat = (typeof getTodayStrategy === 'function') ? getTodayStrategy() : {};
+
+    content.innerHTML = `
+      <div class="page">
+        <div class="page-header">
+          <button class="btn btn-outline btn-sm" onclick="Router.navigate('home')">&#8592; 返回</button>
+          <h2>&#128196; 本周总结</h2>
+        </div>
+
+        <p style="font-size:0.82rem;color:var(--color-text-secondary);margin-bottom:12px;">
+          ${weekStart.getMonth()+1}月${weekStart.getDate()}日 — ${now.getMonth()+1}月${now.getDate()}日
+        </p>
+
+        <!-- 健康状态 -->
+        ${health.active && health.phase !== 'normal' ? `
+        <div class="card" style="border-left:4px solid var(--color-warning);">
+          <div class="card-header"><span class="card-title">&#128249; 健康恢复</span></div>
+          <p style="font-size:0.85rem;color:var(--color-text);">${escapeHtml(health.eventName)}术后第${health.dayOfEvent}天</p>
+          <p style="font-size:0.8rem;color:var(--color-text-secondary);">${escapeHtml(health.dietFocus)}</p>
+          ${health.restrictions.length > 0 ? `<p style="font-size:0.78rem;color:var(--color-warning);">&#9888; ${health.restrictions.join('、')}</p>` : ''}
+        </div>` : ''}
+
+        <!-- 本周数据总览 -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">&#128202; 本周数据</span></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div style="text-align:center;padding:8px;background:var(--color-primary-alpha);border-radius:8px;">
+              <div style="font-size:1.4rem;font-weight:600;color:var(--color-primary);">${moods.length}</div>
+              <div style="font-size:0.75rem;color:var(--color-text-secondary);">心情打卡</div>
+              <div style="font-size:0.8rem;color:var(--color-text);">均分 ${avgMood}</div>
+            </div>
+            <div style="text-align:center;padding:8px;background:rgba(146,170,192,0.1);border-radius:8px;">
+              <div style="font-size:1.4rem;font-weight:600;color:var(--color-info);">${totalReadMin}</div>
+              <div style="font-size:0.75rem;color:var(--color-text-secondary);">阅读(分钟)</div>
+              <div style="font-size:0.8rem;color:var(--color-text);">${readings.length}天</div>
+            </div>
+            <div style="text-align:center;padding:8px;background:rgba(212,181,130,0.1);border-radius:8px;">
+              <div style="font-size:1.4rem;font-weight:600;color:var(--color-warning);">¥${totalExpense.toFixed(0)}</div>
+              <div style="font-size:0.75rem;color:var(--color-text-secondary);">本周支出</div>
+              <div style="font-size:0.8rem;color:var(--color-text);">${financeRecords.length}笔</div>
+            </div>
+            <div style="text-align:center;padding:8px;background:rgba(157,174,148,0.1);border-radius:8px;">
+              <div style="font-size:1.4rem;font-weight:600;color:var(--color-primary);">${totalCalories}</div>
+              <div style="font-size:0.75rem;color:var(--color-text-secondary);">摄入(千卡)</div>
+              <div style="font-size:0.8rem;color:var(--color-text);">${dietRecords.length}餐</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 排便追踪 -->
+        ${bowels.length > 0 ? `
+        <div class="card">
+          <div class="card-header"><span class="card-title">&#128701; 排便追踪</span></div>
+          ${bowels.map(b => `
+            <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:0.82rem;">
+              <span style="color:var(--color-text-tertiary);">${b.date}</span>
+              <span class="tag tag-${b.formed === '成型' ? 'good' : b.formed === '干结' || b.formed === '腹泻' ? 'warning' : 'caution'}">${escapeHtml(b.formed)}</span>
+            </div>
+          `).join('')}
+          <p style="font-size:0.78rem;color:var(--color-text-secondary);margin-top:6px;">
+            ${bowels.filter(b => b.formed === '成型').length}/${bowels.length}天成型 ·
+            ${bowels.filter(b => b.formed === '粘腻' || b.formed === '不成形').length}天偏湿
+          </p>
+        </div>` : ''}
+
+        <!-- 学习/科研进度 -->
+        ${strat.currentWeek ? `
+        <div class="card">
+          <div class="card-header"><span class="card-title">&#127919; 科研学习</span></div>
+          <p style="font-size:0.85rem;color:var(--color-text);">${escapeHtml(strat.currentWeek.title)}</p>
+          <p style="font-size:0.8rem;color:var(--color-text-secondary);">${escapeHtml(strat.currentWeek.date)}</p>
+          ${strat.upcomingMilestones.length > 0 ? `
+          <div style="margin-top:8px;font-size:0.8rem;">
+            <strong style="color:var(--color-warning);">近期硬节点：</strong>
+            ${strat.upcomingMilestones.map(m => `<div style="padding:2px 0;color:var(--color-text);">${escapeHtml(m.formatted)} ${escapeHtml(m.event)}</div>`).join('')}
+          </div>` : ''}
+        </div>` : ''}
+
+        <!-- 管家建议 -->
+        <div class="card" style="border-left:4px solid var(--color-primary);">
+          <div class="card-header"><span class="card-title">&#129302; 管家建议</span></div>
+          <div style="font-size:0.82rem;color:var(--color-text);line-height:1.7;">
+            ${(() => {
+              let tips = [];
+              if (health.active && health.phase === 'recovery_2w') tips.push('术后恢复期，以休息为第一优先，不要勉强运动。饮食继续温补，忌一切寒凉。');
+              if (moods.length > 0 && parseFloat(avgMood) < 3) tips.push('本周心情偏低，注意情绪调节，多休息多倾诉。');
+              if (totalReadMin < 120) tips.push('阅读时间偏少，建议每天至少30分钟。');
+              if (totalExpense > 500) tips.push('本周支出较高，注意控制花呗消费。');
+              if (bowels.filter(b => b.formed === '粘腻' || b.formed === '不成形').length >= 3) tips.push('大便偏湿不成形多日，脾虚湿困明显，建议少吃生冷油腻，喝陈皮生姜茶健脾化湿。');
+              if (tips.length === 0) tips.push('本周整体状态良好，继续保持！');
+              return tips.map(t => `<p style="padding:3px 0;">&#8226; ${t}</p>`).join('');
+            })()}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // ============================================
+  // 护肤每日日记（拍照+问题记录，供AI分析）
+  // ============================================
+  function renderSkincareDiary() {
+    const content = document.getElementById('app-content');
+    const diaries = DataManager.get('skincareDiary') || [];
+    const today = new Date().toISOString().slice(0, 10);
+    const todayDiary = diaries.find(d => d.date === today);
+    const health = LinkageManager.getHealthStatus();
+
+    content.innerHTML = `
+      <div class="page">
+        <div class="page-header">
+          <button class="btn btn-outline btn-sm" onclick="Router.navigate('skincare')">&#8592; 返回</button>
+          <h2>&#128247; 护肤日记</h2>
+          <button class="btn btn-primary btn-sm" id="btn-add-diary">+ 今日</button>
+        </div>
+
+        <!-- 术后恢复期护肤提示 -->
+        ${health.active && health.phase !== 'normal' ? `
+        <div class="card" style="border-left:4px solid var(--color-warning);">
+          <p style="font-size:0.82rem;color:var(--color-text);"><strong>&#9888; 恢复期护肤注意</strong></p>
+          <p style="font-size:0.8rem;color:var(--color-text-secondary);">${escapeHtml(health.skincareNote)}</p>
+        </div>` : ''}
+
+        <!-- 今日日记 -->
+        ${todayDiary ? `
+        <div class="card">
+          <div class="card-header"><span class="card-title">&#128197; ${todayDiary.date} 日记</span></div>
+          ${todayDiary.photo ? `<img src="${escapeHtml(todayDiary.photo)}" style="width:100%;border-radius:8px;margin-bottom:8px;max-height:300px;object-fit:cover;" alt="今日护肤照片">` : '<div class="empty-state-sm">未上传照片</div>'}
+          ${todayDiary.skinCondition ? `<p style="font-size:0.85rem;color:var(--color-text);margin:6px 0;"><strong>皮肤状态：</strong>${escapeHtml(todayDiary.skinCondition)}</p>` : ''}
+          ${todayDiary.problems ? `<p style="font-size:0.82rem;color:var(--color-text-secondary);"><strong>问题：</strong>${escapeHtml(todayDiary.problems)}</p>` : ''}
+          ${todayDiary.aiAdvice ? `<div style="background:var(--color-primary-alpha);border-radius:8px;padding:10px;margin-top:8px;"><p style="font-size:0.8rem;color:var(--color-primary-dark);"><strong>&#129302; 管家建议：</strong>${escapeHtml(todayDiary.aiAdvice)}</p></div>` : '<div style="font-size:0.78rem;color:var(--color-text-tertiary);margin-top:6px;">&#128247; 把照片发给管家分析，获取个性化建议</div>'}
+        </div>` : ''}
+
+        <!-- 历史日记 -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">&#128214; 历史记录</span></div>
+          ${diaries.length === 0 ? '<div class="empty-state-sm">暂无记录</div>' :
+            diaries.slice(-10).reverse().map(d => `
+              <div class="record-card" style="padding:8px 0;border-bottom:1px solid var(--color-border);">
+                <div style="display:flex;align-items:center;gap:8px;">
+                  ${d.photo ? `<img src="${escapeHtml(d.photo)}" style="width:40px;height:40px;border-radius:6px;object-fit:cover;" alt="">` : '<span style="font-size:1.2rem;">📷</span>'}
+                  <div style="flex:1;">
+                    <div style="font-size:0.85rem;color:var(--color-text);">${d.date}</div>
+                    ${d.skinCondition ? `<div style="font-size:0.78rem;color:var(--color-text-secondary);">${escapeHtml(d.skinCondition)}</div>` : ''}
+                  </div>
+                  <button class="btn-edit" data-id="${d.id}">&#9998;</button>
+                  <button class="btn-delete" data-id="${d.id}">&#10007;</button>
+                </div>
+              </div>
+            `).join('')
+          }
+        </div>
+
+        <!-- 使用说明 -->
+        <div class="card" style="background:var(--color-primary-alpha);">
+          <p style="font-size:0.8rem;color:var(--color-text);line-height:1.7;">
+            <strong>&#128161; 怎么用：</strong><br>
+            1. 每天拍照记录皮肤状态（正面/下巴特写）<br>
+            2. 描述今天的问题（新痘痘？出油？泛红？）<br>
+            3. 把照片发给管家（豆包/TRAE），管家分析后把建议写回这里<br>
+            4. 每周对比照片看变化趋势
+          </p>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('btn-add-diary')?.addEventListener('click', () => {
+      const existing = diaries.find(d => d.date === today);
+      Modal.openForm({
+        title: existing ? '修改今日护肤日记' : '今日护肤日记',
+        fields: [
+          { name: 'skinCondition', label: '皮肤状态', type: 'textarea', value: existing?.skinCondition || '', placeholder: '出油/干燥/新痘/泛红/敏感...' },
+          { name: 'problems', label: '具体问题', type: 'textarea', value: existing?.problems || '', placeholder: '下巴新长了几颗？哪泛红？哪里脱皮？' },
+          { name: 'photo', label: '照片（URL或base64）', type: 'textarea', value: existing?.photo || '', placeholder: '粘贴照片链接，或拍照后上传到图床复制链接' },
+          { name: 'aiAdvice', label: '管家建议（管家填写）', type: 'textarea', value: existing?.aiAdvice || '', placeholder: '由管家分析后填写' }
+        ],
+        onConfirm: (data) => {
+          data.date = today;
+          if (existing) {
+            DataManager.updateRecord('skincareDiary', existing.id, data);
+          } else {
+            DataManager.addRecord('skincareDiary', data);
+          }
+          Toast.show('日记已保存', 'success');
+          renderSkincareDiary();
+        }
+      });
+    });
+
+    content.querySelectorAll('.btn-edit').forEach(el => {
+      el.addEventListener('click', () => {
+        const id = el.getAttribute('data-id');
+        const d = diaries.find(x => x.id === id);
+        if (!d) return;
+        Modal.openForm({
+          title: `编辑${d.date}护肤日记`,
+          fields: [
+            { name: 'skinCondition', label: '皮肤状态', type: 'textarea', value: d.skinCondition || '' },
+            { name: 'problems', label: '具体问题', type: 'textarea', value: d.problems || '' },
+            { name: 'photo', label: '照片', type: 'textarea', value: d.photo || '' },
+            { name: 'aiAdvice', label: '管家建议', type: 'textarea', value: d.aiAdvice || '' }
+          ],
+          onConfirm: (data) => {
+            DataManager.updateRecord('skincareDiary', id, data);
+            Toast.show('已更新', 'success');
+            renderSkincareDiary();
+          }
+        });
+      });
+    });
+
+    content.querySelectorAll('.btn-delete').forEach(el => {
+      el.addEventListener('click', () => {
+        const id = el.getAttribute('data-id');
+        Modal.open({
+          title: '确认删除', content: '<p>确定删除这条护肤日记吗？</p>', type: 'danger',
+          onConfirm: () => {
+            DataManager.deleteRecord('skincareDiary', id);
+            Toast.show('已删除', 'info');
+            renderSkincareDiary();
+          }
+        });
+      });
+    });
+  }
+
+  // ============================================
+  // 学习任务拆解到年/月/周/日
+  // ============================================
+  function renderStudyBreakdown() {
+    const content = document.getElementById('app-content');
+    const today = new Date();
+    const todayStr = today.toISOString().slice(0, 10);
+
+    if (typeof ContentData === 'undefined' || !ContentData.researchPlan) {
+      content.innerHTML = '<div class="page"><div class="empty-state">无学习计划数据</div></div>';
+      return;
+    }
+
+    const rp = ContentData.researchPlan;
+    const startDate = new Date(rp.period.split(' — ')[0].replace(/\./g, '-') || '2026-07-27');
+    const daysDiff = Math.floor((today - startDate) / 86400000);
+    const currentWeek = Math.floor(daysDiff / 7) + 1;
+    const totalWeeks = rp.weeklySchedule.length;
+
+    // 当前年月
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth() + 1;
+
+    content.innerHTML = `
+      <div class="page">
+        <div class="page-header">
+          <button class="btn btn-outline btn-sm" onclick="Router.navigate('study')">&#8592; 返回</button>
+          <h2>&#128218; 学习拆解</h2>
+        </div>
+
+        <p style="font-size:0.82rem;color:var(--color-text-secondary);margin-bottom:12px;">
+          ${rp.title} · 第${currentWeek}/${totalWeeks}周 · ${rp.period}
+        </p>
+
+        <!-- 整体进度条 -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">&#128202; 整体进度</span></div>
+          <div class="progress-bar" style="height:12px;background:var(--color-border);border-radius:6px;overflow:hidden;">
+            <div style="height:100%;width:${Math.min(100, (currentWeek / totalWeeks * 100)).toFixed(0)}%;background:var(--color-primary);border-radius:6px;transition:width 0.3s;"></div>
+          </div>
+          <p style="font-size:0.8rem;color:var(--color-text-secondary);margin-top:6px;">${(currentWeek / totalWeeks * 100).toFixed(0)}% · 已完成${Math.max(0, daysDiff)}天</p>
+        </div>
+
+        <!-- 年度目标 -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">&#127942; 年度目标</span></div>
+          <div style="font-size:0.85rem;color:var(--color-text);line-height:1.8;">
+            <p>&#127919; 2026年：建立科研基础能力，完成文献综述投稿</p>
+            <p>&#127919; 2027年：保研入学，第一篇论文投出</p>
+            <p>&#127919; 2028年：开题报告，完成主要实验数据</p>
+            <p>&#127919; 2029年：论文录用，选调冲刺</p>
+            <p>&#127919; 2030年：毕业，选调入职或博士入学</p>
+          </div>
+        </div>
+
+        <!-- 本月目标 -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">&#128203; ${currentMonth}月目标</span></div>
+          ${(() => {
+            const monthTasks = [];
+            if (currentMonth === 8) {
+              monthTasks.push('完成7周科研基础学习（7/27-9/13）');
+              monthTasks.push('CET-6查分（8/21-23）');
+              monthTasks.push('党群实习结束，拿到鉴定（8/31）');
+            } else if (currentMonth === 9) {
+              monthTasks.push('确认保研名额，推免系统填报');
+              monthTasks.push('开始5篇文献压缩精读');
+              monthTasks.push('准备毕业课题选题');
+            }
+            return monthTasks.length > 0
+              ? monthTasks.map(t => `<p style="font-size:0.85rem;color:var(--color-text);padding:3px 0;">&#9744; ${t}</p>`).join('')
+              : '<div class="empty-state-sm">暂无本月目标</div>';
+          })()}
+        </div>
+
+        <!-- 本周任务（自动匹配） -->
+        ${(() => {
+          if (currentWeek < 1 || currentWeek > totalWeeks) return '<div class="card"><div class="empty-state">不在学习计划周期内</div></div>';
+          const week = rp.weeklySchedule[currentWeek - 1];
+          const dayOfWeek = today.getDay();
+          const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+          return `
+          <div class="card" style="border-left:4px solid var(--color-primary);">
+            <div class="card-header">
+              <span class="card-title">&#128198; 第${currentWeek}周 · ${escapeHtml(week.title)}</span>
+              <span class="tag tag-info">${week.date}</span>
+            </div>
+            ${week.days.map((d, i) => `
+              <div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--color-border);${i === dayIndex ? 'background:var(--color-primary-alpha);border-radius:6px;padding:6px 8px;margin:2px -8px;' : ''}">
+                <span style="min-width:90px;font-size:0.78rem;color:${i === dayIndex ? 'var(--color-primary-dark)' : 'var(--color-text-tertiary)'};font-weight:${i === dayIndex ? '600' : '400'};">${escapeHtml(d.date)}${i === dayIndex ? ' ←今天' : ''}</span>
+                <div style="flex:1;">
+                  <div style="font-size:0.82rem;color:var(--color-text);font-weight:${i === dayIndex ? '600' : '400'};">${escapeHtml(d.topic)}</div>
+                  <div style="font-size:0.76rem;color:var(--color-text-tertiary);">${escapeHtml(d.content.slice(0, 60))}${d.content.length > 60 ? '...' : ''}</div>
+                </div>
+              </div>
+            `).join('')}
+          </div>`;
+        })()}
+
+        <!-- 今日具体任务 -->
+        ${(() => {
+          if (currentWeek < 1 || currentWeek > totalWeeks) return '';
+          const week = rp.weeklySchedule[currentWeek - 1];
+          const dayOfWeek = today.getDay();
+          const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+          if (!week.days[dayIndex]) return '';
+          const d = week.days[dayIndex];
+          return `
+          <div class="card" style="border-left:4px solid var(--color-warning);">
+            <div class="card-header"><span class="card-title">&#128197; 今日任务 · ${escapeHtml(d.date)}</span></div>
+            <h3 style="font-size:0.95rem;color:var(--color-text);margin-bottom:6px;">${escapeHtml(d.topic)}</h3>
+            <p style="font-size:0.82rem;color:var(--color-text-secondary);margin-bottom:8px;">${escapeHtml(d.content)}</p>
+            <div style="background:var(--color-primary-alpha);border-radius:8px;padding:10px;">
+              <p style="font-size:0.85rem;color:var(--color-primary-dark);">&#9989; <strong>任务：</strong>${escapeHtml(d.task)}</p>
+            </div>
+            <button class="btn btn-primary btn-sm btn-block" style="margin-top:8px;" id="btn-add-study-task">加入今日待办</button>
+          </div>`;
+        })()}
+      </div>
+    `;
+
+    document.getElementById('btn-add-study-task')?.addEventListener('click', () => {
+      if (currentWeek < 1 || currentWeek > totalWeeks) return;
+      const week = rp.weeklySchedule[currentWeek - 1];
+      const dayOfWeek = today.getDay();
+      const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      const d = week.days[dayIndex];
+      DataManager.addRecord('dailyPlans', {
+        title: d.topic,
+        desc: d.task,
+        priority: 'high',
+        date: todayStr,
+        done: false
+      });
+      Toast.show('已加入今日待办', 'success');
+    });
+  }
 
   // ============================================
   // 设置页面

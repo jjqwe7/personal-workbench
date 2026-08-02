@@ -532,6 +532,25 @@ input, textarea, select {
 .btn-delete:hover {
   color: var(--color-danger);
 }
+.btn-edit {
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-small);
+  transition: color 0.2s;
+}
+.btn-edit:hover {
+  color: var(--color-info);
+}
+.record-actions {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+  margin-left: auto;
+}
 
 /* ============================================
    9. 输入框 / 表单样式
