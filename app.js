@@ -33,13 +33,42 @@ const DataManager = (() => {
     },
 
     dailyPlans: [
-      { text: '写微信公众号推文（第1篇）', level: 'high', done: false, date: '2026-08-05', note: '截止8月5日前完成' },
-      { text: '写微信公众号推文（第2篇）', level: 'mid', done: false, date: '2026-09-05', note: '截止9月5日前完成' },
-      { text: '复查B超（人流术后复查）', level: 'high', done: false, date: '2026-08-03', note: '已预约，明天去医院' }
+      { title: '复查B超（人流术后复查）', desc: '已预约，去医院做B超复查，带上之前的病历', priority: 'high', date: '2026-08-03', done: false },
+      { title: '科研学习：文献知识模块（第2周）', desc: '学习文献检索方法：PubMed、CNKI、Web of Science的使用；关键词检索策略；文献管理工具Zotero入门', priority: 'high', date: '2026-08-04', done: false },
+      { title: '写微信公众号推文（第1篇）', desc: '截止8月5日前完成。主题待定，可以先构思框架', priority: 'high', date: '2026-08-05', done: false },
+      { title: '每日文献阅读1小时', desc: '阅读1篇与本专业相关的文献，记录要点', priority: 'medium', date: '2026-08-06', done: false },
+      { title: '科研学习：文献精读练习', desc: '精读2篇核心文献，练习提取研究问题、方法、结论', priority: 'medium', date: '2026-08-07', done: false },
+      { title: '本周科研学习复盘', desc: '总结本周文献检索和精读的收获，整理笔记', priority: 'medium', date: '2026-08-08', done: false },
+      { title: '写微信公众号推文（第2篇）构思', desc: '截止9月5日。本周先确定主题和大纲', priority: 'low', date: '2026-08-09', done: false }
     ],
-    weeklyPlans: [],
-    monthlyPlans: [],
-    yearlyPlans: [],
+    weeklyPlans: [
+      { title: '本周（8/3-8/9）：术后复查 + 科研学习第2周', desc: '核心任务：①8/3去医院复查B超 ②科研基础学习-文献知识模块 ③8/5前完成推文第1篇 ④每天1小时文献阅读', priority: 'high', date: '2026-08-09', done: false },
+      { title: '第2周（8/10-8/16）：科研学习第3周 + 实习收尾', desc: '核心任务：①科研学习-文献知识模块深入 ②整理党群实习材料，准备实习鉴定 ③推文第1篇如未完成继续 ④每天1小时文献阅读', priority: 'high', date: '2026-08-16', done: false },
+      { title: '第3周（8/17-8/23）：CET-6查分 + 科研学习第4周', desc: '核心任务：①8/21-23查CET-6成绩，≥425则博士门槛已过，<425则制定12月补考计划 ②科研学习进入学术写作模块 ③实习鉴定拿到手', priority: 'high', date: '2026-08-23', done: false },
+      { title: '第4周（8/24-8/30）：科研学习第5周 + 实习最后收尾', desc: '核心任务：①科研学习-学术写作模块深入 ②8/31前实习全部收尾完成 ③开始准备保研确认材料 ④每天1小时文献阅读', priority: 'high', date: '2026-08-30', done: false }
+    ],
+    monthlyPlans: [
+      { title: '2026年8月：术后恢复 + 科研基础学习启动 + 实习收尾', desc: '①人流术后恢复，8/3复查B超 ②科研基础学习7周（7/27-9/13），本月完成文献知识模块 ③党群实习收尾（8/31结束），拿到鉴定/推荐信 ④CET-6查分（8/21-23）⑤完成2篇微信公众号推文（8/5和9/5截止）⑥每天1小时文献阅读习惯建立', priority: 'high', date: '2026-08-31', done: false },
+      { title: '2026年9月：科研学习完成 + 保研确认 + 进实验室准备', desc: '①科研基础学习7周完成（9/13结束），完成期刊投稿模块 ②确认保研名额与录取流程，推免系统填报 ③准备进导师实验室 ④继续每天1小时文献阅读 ⑤选调政策初步了解', priority: 'high', date: '2026-09-30', done: false },
+      { title: '2026年10月：毕业课题选题 + 财务摊牌 + 文献精读', desc: '①10月底确定本科毕业课题选题 ②与父母做财务摊牌（房贷月供、生源地贷款还款、妹妹学费、母亲补贴可持续性）③精读5篇文献（9/14-10/4，3周）④文献综述大纲+初稿（10/5-10/25）⑤提前进实验室跟师姐学习', priority: 'high', date: '2026-10-31', done: false },
+      { title: '2026年11月：开题报告 + 文献综述投稿 + 实验室入门', desc: '①11/4本科毕业课题开题报告 ②文献综述修改完善并投稿 ③继续进实验室学习实验技术 ④CET-6备考（如未过，12月考试）⑤每天1小时文献阅读', priority: 'high', date: '2026-11-30', done: false },
+      { title: '2026年12月：中期检查 + 文献综述投稿 + CET-6考试', desc: '①12/28本科毕业课题中期检查 ②文献综述投稿完成 ③CET-6考试（如需补考）④科研学习持续推进 ⑤选调政策持续跟踪', priority: 'high', date: '2026-12-31', done: false },
+      { title: '2027年1月：文献综述投稿跟踪 + 寒假实验 + 选调调研', desc: '①跟踪文献综述审稿进度 ②寒假进实验室集中学习 ③调研选调政策：上中医是否在云南定向选调名单 ④预备党员转正推进 ⑤如有余力启动下一篇论文前期准备', priority: 'medium', date: '2027-01-31', done: false },
+      { title: '2027年2月：寒假集中实验 + 预备党员转正', desc: '①寒假全职投入实验室，掌握基础实验技术 ②预备党员转正推进 ③文献综述投稿状态跟踪 ④选调信息持续跟踪', priority: 'medium', date: '2027-02-28', done: false },
+      { title: '2027年3月：文献综述发表 + 大四下开学', desc: '①文献综述发表（目标月份）②大四下学期开学 ③继续实验室积累 ④掌握2-3项核心实验技术 ⑤选调资格复查', priority: 'high', date: '2027-03-31', done: false },
+      { title: '2027年4-5月：实验室积累 + 毕业论文准备', desc: '①继续进实验室积累 ②掌握2-3项核心实验技术 ③本科毕业论文撰写和答辩准备 ④如有余力启动新论文前期构思', priority: 'medium', date: '2027-05-31', done: false },
+      { title: '2027年6月：本科毕业论文答辩', desc: '①本科毕业论文答辩 ②暑假提前进组准备 ③研究生入学准备', priority: 'high', date: '2027-06-30', done: false },
+      { title: '2027年7月：暑假提前进组', desc: '①暑假提前进组，全职投入实验室 ②CET-6补考（如仍未过）③研究生入学准备', priority: 'high', date: '2027-07-31', done: false },
+      { title: '2027年8月：研究生入学准备', desc: '①完成入学手续 ②确认导师接收意向 ③暑假实验室积累收官', priority: 'medium', date: '2027-08-31', done: false }
+    ],
+    yearlyPlans: [
+      { title: '2026年（大三暑假→大四上）：保研锁定 + 科研基础建设', desc: '年度核心目标：①完成科研基础学习7周，建立"能读懂、会检索、敢动笔、懂流程"的科研能力 ②保研名额确认，推免系统填报 ③本科毕业课题选题+开题报告+中期检查 ④文献综述撰写并投稿（2027年3月发表目标）⑤CET-6通过（8月查分，如未过12月补考）⑥党群实习收尾，拿到鉴定/推荐信 ⑦与父母做财务摊牌 ⑧提前进实验室跟师姐学习 ⑨每天1小时文献阅读习惯养成。关键节点：11/4开题报告、12/28中期检查、12月文献综述投稿', priority: 'high', date: '2026-12-31', done: false },
+      { title: '2027年（大四→研一）：毕业 + 文献综述发表 + 进实验室', desc: '年度核心目标：①文献综述发表（3月目标）②本科毕业论文答辩（5-6月）③暑假提前进组，全职投入实验室 ④研究生入学 ⑤选调资格全面确认：上中医是否在云南定向选调名单 ⑥争取学生干部岗位 ⑦预备党员转正 ⑧与导师建立信任关系 ⑨CET-6拿下（最后窗口12月）⑩掌握2-3项核心实验技术。关键节点：3月文献综述发表、5-6月毕业答辩、9月研究生入学', priority: 'high', date: '2027-12-31', done: false },
+      { title: '2028年（研一→研二）：开题 + 集中实验 + 论文投稿', desc: '年度核心目标：①研一上：选调资格全面确认、争取学生干部岗位、预备党员转正 ②寒假：文献综述已发表，启动下一篇论文准备 ③研一下：开题报告，确定研究方向，开始预实验 ④暑假：集中推进实验，完成主要实验数据50%以上 ⑤研二上（9-11月）：集中实验，完成全部数据采集 ⑥12月：投稿第一篇SCI/核心论文——整个计划最关键的一步 ⑦启动选调备考（行测+申论，每天1-2小时）。关键节点：5月开题报告、12月论文投稿（最关键节点）', priority: 'high', date: '2028-12-31', done: false },
+      { title: '2029年（研二→研三）：论文录用 + 选调冲刺 + 选调笔试', desc: '年度核心目标：①1-3月：跟踪投稿审稿进度，如被拒立即改投 ②选调备考加速（每天2-3小时）③准备博士申请材料（保险）④4-6月：论文录用确认（6月底前）⑤如有余力启动第二篇论文 ⑥暑假：选调备考冲刺（每天4-6小时）⑦9-10月：选调报名准备，笔试最后冲刺 ⑧11月：云南定向选调报名 ⑨12月：参加选调笔试 ⑩同步关注博士招生信息。关键节点：6月论文录用、11月选调报名、12月选调笔试', priority: 'high', date: '2029-12-31', done: false },
+      { title: '2030年（研三）：选调/博士决策 + 毕业答辩', desc: '年度核心目标：①1-3月：选调结果出来，走A（选调上岸）或B（申博）②3-5月：学位论文撰写 ③5月：硕士学位论文答辩 ④6-7月：毕业手续 路径A（选调上岸）：确认录用与岗位，入职准备，财务规划（月到手5000-7000元，制定还款计划）。路径B（选调未上岸→申博）：4月前联系博导，5月中旬博士网报，5月下旬博士考核，备选外校博士申请。关键节点：5月答辩、5月博士网报（如需）、7月毕业入职/入学', priority: 'high', date: '2030-07-31', done: false },
+      { title: '2031年（过渡期第一年）：入职/入学后的适应与扎根', desc: '路径A（选调入职）：2030年9月入职培训，9月起基层锻炼2年到村任职。尽快适应基层工作节奏，利用中药学专业背景在基层找到差异化价值。财务稳定后评估读博：工作3-5年经济稳定后，如科研热情还在可考虑在职/脱产读博。路径B（博士入学）：2030年9月博士入学确认研究方向，博一完成课程学习启动博士课题。利用助学金+奖学金+导师助研津贴自给自足，月可支配约2000-3500元。2031年8月博一结束评估。', priority: 'medium', date: '2031-08-31', done: false }
+    ],
 
     // 总结复盘
     dailyReviews: [],
@@ -166,17 +195,29 @@ const DataManager = (() => {
           });
         }
       }
-      // 添加推文和复查待办（如果不存在）
+      // 迁移旧格式dailyPlans（text→title, level→priority, note→desc）
       if (_data.dailyPlans && Array.isArray(_data.dailyPlans)) {
-        const addTodoIfMissing = (text, date, note, level) => {
-          const exists = _data.dailyPlans.some(p => p.text === text);
-          if (!exists) {
-            _data.dailyPlans.unshift({ text, level, done: false, date, note });
+        _data.dailyPlans = _data.dailyPlans.map(p => {
+          if (p.text && !p.title) {
+            return { title: p.text, desc: p.note || p.desc || '', priority: p.level === 'mid' ? 'medium' : (p.level || 'low'), date: p.date, done: p.done || false };
           }
-        };
-        addTodoIfMissing('复查B超（人流术后复查）', '2026-08-03', '已预约，去医院', 'high');
-        addTodoIfMissing('写微信公众号推文（第1篇）', '2026-08-05', '截止8月5日前完成', 'high');
-        addTodoIfMissing('写微信公众号推文（第2篇）', '2026-09-05', '截止9月5日前完成', 'mid');
+          return p;
+        });
+      }
+      // 如果计划列表为空或缺少五年战略拆分内容，填充默认计划
+      const needsPlanMigration = (plans) => !plans || !Array.isArray(plans) || plans.length === 0 ||
+        (plans.length > 0 && plans[0].text && !plans[0].title);
+      if (needsPlanMigration(_data.dailyPlans)) {
+        _data.dailyPlans = deepClone(defaultData.dailyPlans);
+      }
+      if (needsPlanMigration(_data.weeklyPlans)) {
+        _data.weeklyPlans = deepClone(defaultData.weeklyPlans);
+      }
+      if (needsPlanMigration(_data.monthlyPlans)) {
+        _data.monthlyPlans = deepClone(defaultData.monthlyPlans);
+      }
+      if (needsPlanMigration(_data.yearlyPlans)) {
+        _data.yearlyPlans = deepClone(defaultData.yearlyPlans);
       }
 
       save();
