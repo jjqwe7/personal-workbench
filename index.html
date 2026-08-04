@@ -22,5 +22,42 @@
   <script src="content-data.js"></script>
   <script src="content-renderer.js"></script>
   <script src="./app.js"></script>
+  <script>
+    // === Service Worker 注册 + 自动更新 ===
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').then(reg => {
+          console.log('[SW] 注册成功');
+          // 监听更新
+          reg.addEventListener('updatefound', () => {
+            const newWorker = reg.installing;
+            if (newWorker) {
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'activated') {
+                  // 新SW已激活，自动刷新页面
+                  console.log('[SW] 新版本已激活，刷新页面');
+                  window.location.reload();
+                }
+              });
+            }
+          });
+        }).catch(err => console.warn('[SW] 注册失败:', err));
+
+        // 监听SW消息（activate时发送的刷新通知）
+        navigator.serviceWorker.addEventListener('message', (event) => {
+          if (event.data && event.data.type === 'SW_UPDATED') {
+            console.log('[SW] 收到更新通知，刷新页面');
+            window.location.reload();
+          }
+        });
+
+        // 检查控制器变化
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          console.log('[SW] 控制器已变更');
+          window.location.reload();
+        });
+      });
+    }
+  </script>
 </body>
 </html>
