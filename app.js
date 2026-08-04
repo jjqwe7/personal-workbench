@@ -220,6 +220,19 @@ const DataManager = (() => {
         _data.yearlyPlans = deepClone(defaultData.yearlyPlans);
       }
 
+      // === 为所有计划项分配ID（修复勾选bug） ===
+      // 默认数据中的计划没有id，导致 data-id="undefined"，勾选无法工作
+      const planCategories = ['dailyPlans', 'weeklyPlans', 'monthlyPlans', 'yearlyPlans'];
+      planCategories.forEach(cat => {
+        if (_data[cat] && Array.isArray(_data[cat])) {
+          _data[cat].forEach(p => {
+            if (!p.id) {
+              p.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+            }
+          });
+        }
+      });
+
       save();
     } catch (e) {
       console.error('[DataManager] 初始化失败:', e);
