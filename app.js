@@ -220,23 +220,33 @@ const DataManager = (() => {
         _data.yearlyPlans = deepClone(defaultData.yearlyPlans);
       }
 
-      // === 为所有计划项分配ID（修复勾选bug） ===
-      // 默认数据中的计划没有id，导致 data-id="undefined"，勾选无法工作
-      const planCategories = ['dailyPlans', 'weeklyPlans', 'monthlyPlans', 'yearlyPlans'];
-      planCategories.forEach(cat => {
-        if (_data[cat] && Array.isArray(_data[cat])) {
-          _data[cat].forEach(p => {
-            if (!p.id) {
-              p.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-            }
-          });
-        }
-      });
+      // === 为所有计划项分配ID（修复勾选/编辑/删除bug） ===
+      // 默认数据中的计划没有id，导致 data-id="undefined"，所有操作无法工作
+      ensureAllPlanIds();
 
       save();
     } catch (e) {
       console.error('[DataManager] 初始化失败:', e);
       _data = deepClone(defaultData);
+    }
+  }
+
+  // === 确保所有计划项都有唯一ID ===
+  function ensureAllPlanIds() {
+    const planCategories = ['dailyPlans', 'weeklyPlans', 'monthlyPlans', 'yearlyPlans'];
+    let counter = 0;
+    planCategories.forEach(cat => {
+      if (_data[cat] && Array.isArray(_data[cat])) {
+        _data[cat].forEach(p => {
+          if (!p.id || p.id === 'undefined' || p.id === 'null') {
+            counter++;
+            p.id = Date.now().toString(36) + counter.toString(36) + Math.random().toString(36).slice(2, 8);
+          }
+        });
+      }
+    });
+    if (counter > 0) {
+      console.log('[DataManager] 为', counter, '个计划项分配了ID');
     }
   }
 
@@ -4165,6 +4175,7 @@ const App = (() => {
   // ============================================
   function renderPlanPage(category, title, icon) {
     const content = document.getElementById('app-content');
+    DataManager.ensurePlanIds();
     const plans = DataManager.get(category);
 
     content.innerHTML = `
@@ -4266,6 +4277,7 @@ const App = (() => {
 
   function renderPlanDaily() {
     const content = document.getElementById('app-content');
+    DataManager.ensurePlanIds();
     const plans = DataManager.get('dailyPlans');
     const today = new Date();
     const todayStr = today.toISOString().slice(0, 10);
@@ -6023,7 +6035,7 @@ const App = (() => {
     });
   }
 
-  return { init };
+  return { init, ensurePlanIds: ensureAllPlanIds };
 })();
 
 
