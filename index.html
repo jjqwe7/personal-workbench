@@ -8,53 +8,52 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="工作台">
   <meta name="description" content="个人生活管理工作台 - 集成学习、护肤、饮食、运动、财务与战略规划">
-  <link rel="manifest" href="./manifest.json">
+  <link rel="manifest" href="./manifest.json?v=14">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='40' fill='%239DAE94'/%3E%3Cpath d='M96 40 L96 152' stroke='white' stroke-width='8' stroke-linecap='round'/%3E%3Cpath d='M60 76 L96 40 L132 76' stroke='white' stroke-width='8' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M52 120 L140 120' stroke='white' stroke-width='8' stroke-linecap='round'/%3E%3C/svg%3E">
   <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='40' fill='%239DAE94'/%3E%3Cpath d='M96 40 L96 152' stroke='white' stroke-width='8' stroke-linecap='round'/%3E%3Cpath d='M60 76 L96 40 L132 76' stroke='white' stroke-width='8' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M52 120 L140 120' stroke='white' stroke-width='8' stroke-linecap='round'/%3E%3C/svg%3E">
   <title>个人工作台</title>
-  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./style.css?v=14">
 </head>
 <body>
   <div id="app">
     <div id="app-content"></div>
     <div id="nav-container"></div>
   </div>
-  <script src="content-data.js"></script>
-  <script src="content-renderer.js"></script>
-  <script src="./app.js"></script>
+  <!-- 第一步：在加载任何脚本前，先清除旧Service Worker和缓存 -->
   <script>
-    // === Service Worker 注册 + 自动更新 ===
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').then(reg => {
-          console.log('[SW] 注册成功');
-          // 监听更新
-          reg.addEventListener('updatefound', () => {
-            const newWorker = reg.installing;
-            if (newWorker) {
-              newWorker.addEventListener('statechange', () => {
-                if (newWorker.state === 'activated') {
-                  // 新SW已激活，自动刷新页面
-                  console.log('[SW] 新版本已激活，刷新页面');
-                  window.location.reload();
-                }
-              });
-            }
+    (function() {
+      // 1. 注销所有旧Service Worker
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          registrations.forEach(function(reg) {
+            console.log('[Cleanup] 注销旧SW:', reg.scope);
+            reg.unregister();
           });
-        }).catch(err => console.warn('[SW] 注册失败:', err));
-
-        // 监听SW消息（activate时发送的刷新通知）
-        navigator.serviceWorker.addEventListener('message', (event) => {
-          if (event.data && event.data.type === 'SW_UPDATED') {
-            console.log('[SW] 收到更新通知，刷新页面');
-            window.location.reload();
-          }
         });
-
-        // 检查控制器变化
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-          console.log('[SW] 控制器已变更');
-          window.location.reload();
+      }
+      // 2. 清除所有caches
+      if ('caches' in window) {
+        caches.keys().then(function(names) {
+          names.forEach(function(name) {
+            console.log('[Cleanup] 删除缓存:', name);
+            caches.delete(name);
+          });
+        });
+      }
+    })();
+  </script>
+  <!-- 第二步：加载应用脚本（带版本号避免缓存） -->
+  <script src="content-data.js?v=14"></script>
+  <script src="content-renderer.js?v=14"></script>
+  <script src="./app.js?v=14"></script>
+  <!-- 第三步：注册新Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('./sw.js?v=14').then(function(reg) {
+          console.log('[SW] 注册成功');
+        }).catch(function(err) {
+          console.warn('[SW] 注册失败:', err);
         });
       });
     }
