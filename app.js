@@ -222,7 +222,20 @@ const DataManager = (() => {
 
       // === 为所有计划项分配ID（修复勾选/编辑/删除bug） ===
       // 默认数据中的计划没有id，导致 data-id="undefined"，所有操作无法工作
-      ensureAllPlanIds();
+      try {
+        const planCats = ['dailyPlans', 'weeklyPlans', 'monthlyPlans', 'yearlyPlans'];
+        planCats.forEach(cat => {
+          if (_data[cat] && Array.isArray(_data[cat])) {
+            _data[cat].forEach(p => {
+              if (!p.id || p.id === 'undefined' || p.id === 'null') {
+                p.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+              }
+            });
+          }
+        });
+      } catch (idErr) {
+        console.warn('[DataManager] ID分配失败:', idErr);
+      }
 
       save();
     } catch (e) {
@@ -4175,8 +4188,7 @@ const App = (() => {
   // ============================================
   function renderPlanPage(category, title, icon) {
     const content = document.getElementById('app-content');
-    DataManager.ensurePlanIds();
-    const plans = DataManager.get(category);
+    const plans = DataManager.get(category) || [];
 
     content.innerHTML = `
       <div class="page plan-page">
@@ -4277,8 +4289,7 @@ const App = (() => {
 
   function renderPlanDaily() {
     const content = document.getElementById('app-content');
-    DataManager.ensurePlanIds();
-    const plans = DataManager.get('dailyPlans');
+    const plans = DataManager.get('dailyPlans') || [];
     const today = new Date();
     const todayStr = today.toISOString().slice(0, 10);
 
@@ -6035,7 +6046,7 @@ const App = (() => {
     });
   }
 
-  return { init, ensurePlanIds: ensureAllPlanIds };
+  return { init };
 })();
 
 
